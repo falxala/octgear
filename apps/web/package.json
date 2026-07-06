@@ -1,5 +1,5 @@
 {
-  "name": "@cyborg-mini/web",
+  "name": "@octgear/web",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,5 +1,5 @@
 import type { DeviceState } from "../../features/device/deviceCommands";
-import { CYBORG_MINI_USB, formatUsbId } from "../../features/device/usbIdentity";
+import { OCTGEAR_USB, formatUsbId } from "../../features/device/usbIdentity";
 import { HARDWARE_CONFIG } from "../../features/hardware/hardwareConfig";
 import { t } from "../../shared/i18n";
 
@@ -38,7 +38,7 @@ export function HardwarePanel({ deviceState }: HardwarePanelProps) {
         <div>
           <dt>{t.hardware.usbId}</dt>
           <dd>
-            {formatUsbId(CYBORG_MINI_USB.vendorId)}:{formatUsbId(CYBORG_MINI_USB.productId)}
+            {formatUsbId(OCTGEAR_USB.vendorId)}:{formatUsbId(OCTGEAR_USB.productId)}
           </dd>
         </div>
         <div>

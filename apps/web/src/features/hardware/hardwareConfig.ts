@@ -16,7 +16,7 @@ const encoderControls = [
 ] as const;
 
 export const HARDWARE_CONFIG = {
-  productName: "Cyborg Mini 8 Keys + Encoder",
+  productName: "OctGear",
   physicalKeyCount: keyControls.length,
   keyCount: keyControls.length + encoderControls.length,
   layerCount: 6,

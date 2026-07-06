@@ -83,4 +83,4 @@ pnpm build
 pnpm firmware:web
 ```
 
-`pnpm firmware:web` は `apps/web/public/firmware/cyborg-mini-8key.uf2` を更新します。
+`pnpm firmware:web` は `apps/web/public/firmware/octgear.uf2` を更新します。

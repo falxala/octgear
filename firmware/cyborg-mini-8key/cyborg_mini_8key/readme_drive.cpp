@@ -17,7 +17,7 @@ constexpr uint32_t DATA_LBA = 5;
 
 constexpr char README_TEXT[] =
   "\xef\xbb\xbf"
-  "Cyborg Mini 8 Keys\r\n"
+  "OctGear\r\n"
   "\r\n"
   "このドライブはレスキューモードで起動したときだけ表示されます。\r\n"
   "レスキューモード中は、本体LEDが弱い緑色で点灯します。\r\n"
@@ -38,7 +38,7 @@ constexpr char README_TEXT[] =
 
 constexpr char README_EN_TEXT[] =
   "\xef\xbb\xbf"
-  "Cyborg Mini 8 Keys\r\n"
+  "OctGear\r\n"
   "\r\n"
   "This drive appears only when the device starts in rescue mode.\r\n"
   "The onboard LED stays dim green while rescue mode is active.\r\n"
@@ -165,7 +165,7 @@ void buildBootSector(uint8_t* buffer) {
   buffer[36] = 0x80;
   buffer[38] = 0x29;
   putLe32(buffer, 39, 0x43384d42);
-  memcpy(buffer + 43, "CYBORG8    ", 11);
+  memcpy(buffer + 43, "OCTGEAR    ", 11);
   memcpy(buffer + 54, "FAT12   ", 8);
   buffer[510] = 0x55;
   buffer[511] = 0xaa;
@@ -186,7 +186,7 @@ void buildFatSector(uint8_t* buffer) {
 }
 
 void buildRootSector(uint8_t* buffer) {
-  writeDirectoryEntry(buffer, 0, "CYBORG8    ", 0x08, 0, 0);
+  writeDirectoryEntry(buffer, 0, "OCTGEAR    ", 0x08, 0, 0);
 
   for (uint8_t index = 0; index < sizeof(DRIVE_FILES) / sizeof(DRIVE_FILES[0]); index++) {
     const DriveFile& file = DRIVE_FILES[index];
@@ -266,7 +266,7 @@ void beginReadmeDrive() {
   }
 
   driveActive = true;
-  readmeMsc.setID("Cyborg", "Remapper", "1.0");
+  readmeMsc.setID("OctGear", "Remapper", "1.0");
   readmeMsc.setCapacity(BLOCK_COUNT, BLOCK_SIZE);
   readmeMsc.setReadWriteCallback(readCallback, writeCallback, flushCallback);
   readmeMsc.setWritableCallback(writableCallback);

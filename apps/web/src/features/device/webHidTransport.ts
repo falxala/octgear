@@ -1,6 +1,6 @@
 import type { HidConnectionEvent, HidDevice, HidInputReportEvent, HidNavigator } from "./webHidTypes";
 import { CONFIG_REPORT_ID } from "./hidProtocol";
-import { CYBORG_MINI_USB } from "./usbIdentity";
+import { OCTGEAR_USB } from "./usbIdentity";
 import { t } from "../../shared/i18n";
 
 export type ConfigReportListener = (report: Uint8Array) => void;
@@ -14,12 +14,12 @@ export class WebHidTransport {
 
   async requestDevice() {
     const hid = this.getHidApi();
-    console.info("[hid] requesting device with filters", [CYBORG_MINI_USB]);
+    console.info("[hid] requesting device with filters", [OCTGEAR_USB]);
     const devices = await hid.requestDevice({
       filters: [
         {
-          vendorId: CYBORG_MINI_USB.vendorId,
-          productId: CYBORG_MINI_USB.productId,
+          vendorId: OCTGEAR_USB.vendorId,
+          productId: OCTGEAR_USB.productId,
         },
       ],
     });

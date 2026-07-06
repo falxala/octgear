@@ -1,4 +1,4 @@
-# Cyborg Mini 8 Keys
+# OctGear
 
 RP2040 Zero / 互換ボードを使う8キー小型キーボードと、WebHIDベースの設定ツールです。
 
@@ -78,7 +78,7 @@ pnpm firmware:build
 pnpm firmware:web
 ```
 
-`pnpm firmware:web` は `apps/web/public/firmware/cyborg-mini-8key.uf2` も更新します。
+`pnpm firmware:web` は `apps/web/public/firmware/octgear.uf2` も更新します。
 
 ## Diagnostics
 
@@ -127,8 +127,8 @@ Default firmware identity:
 | --- | --- |
 | Vendor ID | `0xCAFE` |
 | Product ID | `0xC608` |
-| Manufacturer | `Cyborg Project` |
-| Product | `Cyborg Mini 8 Keys` |
+| Manufacturer | `OctGear` |
+| Product | `OctGear` |
 
 `0xCAFE` is used as the project-local development/vendor ID. Keep project PIDs under the `0xC6xx` range to avoid accidental reuse inside this repository.
 
@@ -136,7 +136,7 @@ Reserved project PIDs:
 
 | PID | Use |
 | --- | --- |
-| `0xC608` | Cyborg Mini 8 Keys normal firmware |
+| `0xC608` | OctGear normal firmware |
 | `0xC609` | Reserved for rescue-mode identity if split from normal firmware |
 
 For broader commercial distribution, replace this with an assigned VID/PID, a permitted vendor sublicense, or an allocated pid.codes PID.

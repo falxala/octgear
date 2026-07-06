@@ -1,14 +1,14 @@
 {
-  "name": "cyborg-mini-8key-remapper",
+  "name": "octgear-remapper",
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "scripts": {
-    "dev": "pnpm --filter @cyborg-mini/web dev",
-    "build": "pnpm --filter @cyborg-mini/web build",
+    "dev": "pnpm --filter @octgear/web dev",
+    "build": "pnpm --filter @octgear/web build",
     "firmware:build": "scripts/compile-firmware.sh",
     "firmware:web": "scripts/build-web-firmware.sh",
     "rescue-cmd:assets": "scripts/build-rescue-cmd-asset.sh",
-    "preview": "pnpm --filter @cyborg-mini/web preview",
-    "typecheck": "pnpm --filter @cyborg-mini/web typecheck"
+    "preview": "pnpm --filter @octgear/web preview",
+    "typecheck": "pnpm --filter @octgear/web typecheck"
   }
 }

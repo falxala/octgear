@@ -2,20 +2,20 @@ import type { ja } from "./ja";
 
 export const en: typeof ja = {
   app: {
-    eyebrow: "Cyborg Project",
+    eyebrow: "OctGear",
     title: "Mini Remapper",
     description: "WebHID keymap editor for the 8-key + rotary encoder RP2040 board",
     workspaceLabel: "Remapper workspace",
   },
   home: {
-    eyebrow: "Cyborg Project",
+    eyebrow: "OctGear",
     title: "Device Hub",
     description: "Choose a supported device to open its remapper or firmware updater.",
     productListLabel: "Product list",
     products: [
       {
         status: "Available",
-        name: "Cyborg Mini 8 + Encoder",
+        name: "OctGear",
         description: "Temporary product page for the 8-key RP2040 board with a 5-pin rotary encoder.",
       },
     ],
@@ -171,7 +171,7 @@ export const en: typeof ja = {
   },
   device: {
     fallbackName: "HID device",
-    notFound: "Cyborg Mini was not found. Connect it and try again, or reflash the firmware.",
+    notFound: "OctGear was not found. Connect it and try again, or reflash the firmware.",
     missingDevice: "No HID device is available to connect",
     timeout: "Timed out waiting for a HID response",
     unsupportedWebHid: "This browser does not support WebHID",

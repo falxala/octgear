@@ -1,19 +1,19 @@
 export const ja = {
   app: {
-    eyebrow: "Cyborg Project",
+    eyebrow: "OctGear",
     title: "Mini Remapper",
     description: "8キー + ロータリーエンコーダ RP2040 ボード用 WebHID キーマップエディタ",
     workspaceLabel: "リマッパー作業領域",
   },
   home: {
-    eyebrow: "Cyborg Project",
+    eyebrow: "OctGear",
     title: "Device Hub",
     description: "対応デバイスを選んで、Remapper や Firmware updater を開きます。",
     productListLabel: "製品一覧",
     products: [
       {
         status: "Available",
-        name: "Cyborg Mini 8 + Encoder",
+        name: "OctGear",
         description: "8キーと5pinロータリーエンコーダを持つRP2040ボード向けの暫定製品ページです。",
       },
     ],
@@ -169,7 +169,7 @@ export const ja = {
   },
   device: {
     fallbackName: "HID device",
-    notFound: "Cyborg Mini が見つかりません。接続後にもう一度試すか、ファームウェアを書き込み直してください",
+    notFound: "OctGear が見つかりません。接続後にもう一度試すか、ファームウェアを書き込み直してください",
     missingDevice: "接続するHIDデバイスがありません",
     timeout: "HIDデバイスからの応答がタイムアウトしました",
     unsupportedWebHid: "このブラウザはWebHIDに対応していません",

@@ -1,4 +1,4 @@
-# Cyborg Mini 8-Key Hardware
+# OctGear Hardware
 
 現行8キー版ハードウェア資料です。
 

@@ -126,7 +126,7 @@ bool parseLayerKey(char*& cursor, uint8_t& layer, uint8_t& keyIndex) {
 }
 
 void printHelp() {
-  Serial.println(F("Cyborg Mini serial rescue"));
+  Serial.println(F("OctGear serial rescue"));
   Serial.println(F("Commands:"));
   Serial.println(F("  probe"));
   Serial.println(F("  help"));
@@ -154,7 +154,7 @@ void handleState() {
 }
 
 void handleProbe() {
-  Serial.print(F("CYBORG8 ACK rescue=1 layers="));
+  Serial.print(F("OCTGEAR ACK rescue=1 layers="));
   Serial.print(Config::LAYER_COUNT);
   Serial.print(F(" keys="));
   Serial.println(Config::KEY_COUNT);
@@ -333,7 +333,7 @@ void handleCommand(char* line) {
 }
 
 void printPrompt() {
-  Serial.print(F("cyborg> "));
+  Serial.print(F("octgear> "));
   Serial.flush();
 }
 
