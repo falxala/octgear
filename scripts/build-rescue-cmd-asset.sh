@@ -2,7 +2,7 @@
 set -eu
 
 ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-SKETCH_DIR="$ROOT_DIR/firmware/cyborg-mini-8key/cyborg_mini_8key"
+SKETCH_DIR="$ROOT_DIR/firmware/octgear/octgear"
 SRC_FILE="$SKETCH_DIR/rescue.cmd"
 OUT_FILE="$SKETCH_DIR/rescue_cmd_asset.h"
 TMP_FILE="$OUT_FILE.tmp"

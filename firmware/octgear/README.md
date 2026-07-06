@@ -2,7 +2,7 @@
 
 現行8キー版のRP2040ファームウェアです。
 
-Arduinoスケッチ本体は `cyborg_mini_8key/` にあります。
+Arduinoスケッチ本体は `octgear/` にあります。
 
 ## Current Scope
 
@@ -40,7 +40,7 @@ pnpm firmware:web
 `pnpm firmware:web` はWeb配信用の `apps/web/public/firmware/octgear.uf2` を更新します。
 同時に、Windows offline rescue用の `apps/web/public/firmware/RESCUE.CMD` も出力します。
 
-`cyborg_mini_8key/rescue.cmd` を変更した場合は、ファームウェアビルド時に `cyborg_mini_8key/rescue_cmd_asset.h` が再生成されます。手動で生成だけ行う場合は、リポジトリルートで `pnpm rescue-cmd:assets` を実行します。
+`octgear/rescue.cmd` を変更した場合は、ファームウェアビルド時に `octgear/rescue_cmd_asset.h` が再生成されます。手動で生成だけ行う場合は、リポジトリルートで `pnpm rescue-cmd:assets` を実行します。
 
 ## Storage
 

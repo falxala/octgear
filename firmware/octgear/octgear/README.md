@@ -6,7 +6,7 @@ Arduino IDE / Arduino CLI で開くスケッチ本体です。
 
 | File | Role |
 | --- | --- |
-| `cyborg_mini_8key.ino` | `setup()` / `loop()` |
+| `octgear.ino` | `setup()` / `loop()` |
 | `config.h` | ピン番号、キー数、reportサイズなどの設定 |
 | `key_scanner.*` | 8本Direct入力 + 2本仮想GNDのスキャン |
 | `keymap.*` | レイヤー別キーマップ |
@@ -23,7 +23,7 @@ Arduino IDE / Arduino CLI で開くスケッチ本体です。
 
 ## Before Flashing
 
-`config.h` のピン番号は現行8キー版の配線に合わせています。ハードウェアを変更する場合は、以下と `hardware/cyborg-mini-8key/pinout.md` を同時に更新します。
+`config.h` のピン番号は現行8キー版の配線に合わせています。ハードウェアを変更する場合は、以下と `hardware/octgear/pinout.md` を同時に更新します。
 
 - `KEY_PINS`
 - `VIRTUAL_GROUND_PINS`
@@ -53,7 +53,7 @@ Arduino IDE / Arduino CLI で開くスケッチ本体です。
 scripts/arduino-cli.sh compile \
   --fqbn rp2040:rp2040:waveshare_rp2040_zero \
   --board-options usbstack=tinyusb,freq=125 \
-  firmware/cyborg-mini-8key/cyborg_mini_8key
+  firmware/octgear/octgear
 ```
 
 `--board-options usbstack=tinyusb,freq=125` は必須です。設定用 vendor HID report を Adafruit TinyUSB で扱い、CPU クロックを 125 MHz に固定します。

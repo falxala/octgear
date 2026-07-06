@@ -17,4 +17,4 @@ exec "$ROOT_DIR/scripts/arduino-cli.sh" compile \
   --build-property "build.usbpid=-DUSBD_PID=$USB_PID -DUSB_PID=$USB_PID" \
   --build-property "build.usb_manufacturer=\"$USB_MANUFACTURER\"" \
   --build-property "build.usb_product=\"$USB_PRODUCT\"" \
-  "$ROOT_DIR/firmware/cyborg-mini-8key/cyborg_mini_8key"
+  "$ROOT_DIR/firmware/octgear/octgear"

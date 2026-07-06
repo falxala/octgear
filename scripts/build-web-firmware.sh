@@ -7,10 +7,10 @@ USB_VID="${USB_VID:-0xCAFE}"
 USB_PID="${USB_PID:-0xC608}"
 USB_MANUFACTURER="${USB_MANUFACTURER:-OctGear}"
 USB_PRODUCT="${USB_PRODUCT:-OctGear}"
-BUILD_DIR="${BUILD_DIR:-$ROOT_DIR/.arduino/build/cyborg-mini-8key}"
-EXPORT_DIR="${EXPORT_DIR:-$ROOT_DIR/.arduino/export/cyborg-mini-8key}"
+BUILD_DIR="${BUILD_DIR:-$ROOT_DIR/.arduino/build/octgear}"
+EXPORT_DIR="${EXPORT_DIR:-$ROOT_DIR/.arduino/export/octgear}"
 PUBLIC_DIR="$ROOT_DIR/apps/web/public/firmware"
-SKETCH_DIR="$ROOT_DIR/firmware/cyborg-mini-8key/cyborg_mini_8key"
+SKETCH_DIR="$ROOT_DIR/firmware/octgear/octgear"
 
 mkdir -p "$BUILD_DIR" "$EXPORT_DIR" "$PUBLIC_DIR"
 
@@ -27,5 +27,5 @@ mkdir -p "$BUILD_DIR" "$EXPORT_DIR" "$PUBLIC_DIR"
   --output-dir "$EXPORT_DIR" \
   "$SKETCH_DIR"
 
-cp "$EXPORT_DIR/cyborg_mini_8key.ino.uf2" "$PUBLIC_DIR/octgear.uf2"
+cp "$EXPORT_DIR/octgear.ino.uf2" "$PUBLIC_DIR/octgear.uf2"
 cp "$SKETCH_DIR/rescue.cmd" "$PUBLIC_DIR/RESCUE.CMD"

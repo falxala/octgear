@@ -2,7 +2,7 @@
 
 現行8キー版のファームウェアとPCB設計を合わせるためのピン割り当てです。
 
-この表と `firmware/cyborg-mini-8key/cyborg_mini_8key/config.h` を同時に管理します。
+この表と `firmware/octgear/octgear/config.h` を同時に管理します。
 
 ## Key Inputs
 
