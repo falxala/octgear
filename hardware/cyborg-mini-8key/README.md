@@ -14,5 +14,3 @@
 ## Documents
 
 - `pinout.md`: 現行ピン割り当て
-
-旧6キー版のケース、PCB、ボトムプレート資料は `legacy/hardware/cyborg-mini-6key/` にあります。

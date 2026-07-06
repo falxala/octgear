@@ -47,7 +47,3 @@ pnpm firmware:web
 キーマップはRP2040 Arduino coreのEEPROMエミュレーションに保存します。実体は外付けSPI Flashです。
 
 通常運用ではSave時だけ書き込みます。DiagnosticsのStorage testも実際の保存領域へ書きます。全個体検査で必要な回数だけ実行してください。
-
-## 参照元
-
-旧6キー版ファームウェアは `legacy/firmware/cyborg-mini-6key/` にあります。
