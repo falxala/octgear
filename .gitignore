@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.local
+*.tsbuildinfo
+.gitdir/
+.tools/
+.arduino/
+
+.DS_Store
+
+apps/*/node_modules/
+apps/*/dist/
+apps/*/.vite/

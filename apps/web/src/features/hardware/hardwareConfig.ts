@@ -1,0 +1,33 @@
+const keyControls = [
+  { id: "k1", label: "K1", bit: 0, kind: "key" },
+  { id: "k2", label: "K2", bit: 1, kind: "key" },
+  { id: "k3", label: "K3", bit: 2, kind: "key" },
+  { id: "k4", label: "K4", bit: 3, kind: "key" },
+  { id: "k5", label: "K5", bit: 4, kind: "key" },
+  { id: "k6", label: "K6", bit: 5, kind: "key" },
+  { id: "k7", label: "K7", bit: 6, kind: "key" },
+  { id: "k8", label: "K8", bit: 7, kind: "key" },
+] as const;
+
+const encoderControls = [
+  { id: "enc-ccw", label: "CCW", bit: 8, kind: "encoder" },
+  { id: "enc-cw", label: "CW", bit: 9, kind: "encoder" },
+  { id: "enc-sw", label: "SW", bit: 10, kind: "encoderSwitch" },
+] as const;
+
+export const HARDWARE_CONFIG = {
+  productName: "Cyborg Mini 8 Keys + Encoder",
+  physicalKeyCount: keyControls.length,
+  keyCount: keyControls.length + encoderControls.length,
+  layerCount: 6,
+  virtualGroundCount: 2,
+  externalRgbLed: false,
+  oled: false,
+  encoder: {
+    enabled: true,
+    pinCount: 5,
+    controls: encoderControls,
+  },
+  keyPins: keyControls,
+  controls: [...keyControls, ...encoderControls],
+} as const;

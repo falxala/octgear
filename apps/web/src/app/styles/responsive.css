@@ -1,0 +1,215 @@
+@container (max-width: 1180px) {
+  .layer-board,
+  .consumer-board,
+  .keyboard-picker {
+    --key-font-size: 11px;
+    --key-unit: 40px;
+  }
+}
+
+@container (max-width: 1080px) {
+  .layer-board,
+  .consumer-board,
+  .keyboard-picker {
+    --key-font-size: 10px;
+    --key-unit: 36px;
+  }
+}
+
+@container (max-width: 980px) {
+  .layer-board,
+  .consumer-board,
+  .keyboard-picker {
+    --key-font-size: 9px;
+    --key-unit: 32px;
+  }
+}
+
+@container (max-width: 900px) {
+  .layer-board,
+  .consumer-board,
+  .keyboard-picker {
+    --key-font-size: 8px;
+    --key-unit: 29px;
+  }
+}
+
+@media (max-width: 1060px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .control-map {
+    grid-template-columns: 1fr;
+  }
+
+  .hardware-panel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .remap-panel {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .editor-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .firmware-panel,
+  .picker-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    padding: 16px 16px 28px;
+  }
+
+  .topbar {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 18px;
+  }
+
+  .connection {
+    justify-content: space-between;
+  }
+
+  .connection-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .connection-meta {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .connection-text {
+    text-align: left;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .diagnostics-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .hardware-panel,
+  .remap-panel,
+  .editor-panel,
+  .picker-panel {
+    grid-column: auto;
+    grid-row: auto;
+    min-height: auto;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .panel-heading,
+  .remap-strip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .remap-strip .layer-tabs,
+  .remap-strip .control-map {
+    width: 100%;
+  }
+
+  .key-grid,
+  .encoder-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editor-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .modifier-selects {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .remap-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand {
+    align-items: flex-start;
+  }
+
+  .home-hero {
+    padding: 20px;
+  }
+
+  .home-brand {
+    flex-direction: column;
+  }
+
+  .brand h1 {
+    font-size: 26px;
+  }
+
+  .home-brand h1 {
+    font-size: 42px;
+  }
+
+  .connection {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .connection button {
+    width: 100%;
+  }
+
+  .connection-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .connection-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .connection-text {
+    white-space: normal;
+  }
+
+  .modal-backdrop {
+    padding: 16px;
+  }
+
+  .modal-header {
+    flex-direction: column;
+  }
+
+  .key-grid,
+  .encoder-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .diagnostic-key-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assignment-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .modifier-selects {
+    grid-template-columns: 1fr;
+  }
+}

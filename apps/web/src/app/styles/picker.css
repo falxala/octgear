@@ -1,0 +1,271 @@
+.picker-panel {
+  container-type: inline-size;
+  overflow: hidden;
+}
+
+.picker-panel .panel-heading {
+  margin-bottom: 16px;
+}
+
+.layer-board,
+.consumer-board,
+.keyboard-picker {
+  --key-font-size: 12px;
+  --key-gap: 5px;
+  --key-unit: 44px;
+}
+
+.keyboard-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.layer-board,
+.consumer-board {
+  display: block;
+  max-width: 100%;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid rgba(78, 61, 38, 0.16);
+  border-radius: 8px;
+  background: rgba(237, 226, 212, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  overflow-x: auto;
+}
+
+.keyboard-picker {
+  min-width: max-content;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: max-content max-content max-content;
+  grid-template-rows: auto auto;
+  padding: 16px;
+  border: 1px solid rgba(78, 61, 38, 0.18);
+  border-radius: 8px;
+  background: rgba(222, 207, 189, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    inset 0 -1px 0 rgba(120, 91, 54, 0.18);
+  overflow: visible;
+}
+
+.keyboard-main,
+.keyboard-cluster {
+  display: grid;
+  gap: 8px;
+}
+
+.keyboard-main {
+  align-self: start;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.system-cluster {
+  align-self: start;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.navigation-cluster {
+  align-self: end;
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.numpad-cluster {
+  align-self: start;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  margin-top: calc(var(--key-unit) + 8px);
+}
+
+.picker-row {
+  display: flex;
+  gap: var(--key-gap);
+  min-width: max-content;
+}
+
+.picker-row.compact {
+  min-width: 0;
+}
+
+.picker-key,
+.picker-spacer,
+.picker-decor {
+  flex: 0 0 calc(var(--key-units, 1) * var(--key-unit));
+  min-width: 0;
+}
+
+.picker-key {
+  --key-surface: rgba(255, 252, 247, 0.98);
+  --key-edge: rgba(78, 61, 38, 0.2);
+  --key-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -5px 0 rgba(169, 151, 125, 0.24),
+    0 1px 0 rgba(109, 86, 48, 0.14);
+  --key-text: #312b24;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--key-unit) * 0.98);
+  padding: 0;
+  position: relative;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.picker-key:hover:not(:disabled) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.picker-key.layout-accent {
+  --key-text: #9f4f1d;
+}
+
+.keyboard-picker.us .picker-key.layout-accent {
+  --key-text: var(--accent-strong);
+}
+
+.picker-key.active,
+.picker-decor.active {
+  --key-surface: var(--selection-soft);
+  --key-edge: rgba(27, 143, 130, 0.46);
+  --key-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -5px 0 rgba(27, 143, 130, 0.2),
+    0 1px 0 rgba(11, 95, 88, 0.16);
+  --key-text: var(--selection-strong);
+}
+
+.picker-decor {
+  height: calc(var(--key-unit) * 0.98);
+  pointer-events: none;
+}
+
+.picker-decor.jis-enter-lower {
+  visibility: hidden;
+}
+
+.picker-decor.numpad-enter-lower {
+  visibility: hidden;
+}
+
+.picker-decor.numpad-plus-lower {
+  visibility: hidden;
+}
+
+.keycap-svg {
+  display: block;
+  overflow: visible;
+}
+
+.keycap-svg-regular {
+  width: 100%;
+  height: 100%;
+}
+
+.keycap-svg-jis-enter,
+.keycap-svg-numpad-enter,
+.keycap-svg-numpad-plus {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.keycap-svg-jis-enter {
+  width: calc(var(--key-unit) * 1.75);
+  height: calc((var(--key-unit) * 2) + var(--key-gap));
+}
+
+.keycap-svg-numpad-enter {
+  width: var(--key-unit);
+  height: calc((var(--key-unit) * 2) + var(--key-gap));
+}
+
+.keycap-svg-numpad-plus {
+  width: var(--key-unit);
+  height: calc((var(--key-unit) * 2) + var(--key-gap));
+}
+
+.keycap-svg .shape-fill {
+  fill: var(--key-surface);
+}
+
+.keycap-svg .shape-shadow {
+  fill: rgba(169, 151, 125, 0.24);
+}
+
+.picker-key.active .keycap-svg .shape-shadow {
+  fill: rgba(27, 143, 130, 0.2);
+}
+
+.keycap-svg .shape-stroke {
+  fill: none;
+  stroke: var(--key-edge);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.keycap-svg .shape-label {
+  fill: var(--key-text);
+  font-size: 14px;
+  font-weight: 800;
+  dominant-baseline: middle;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.keycap-svg .shape-label-narrow {
+  font-size: 13px;
+  transform: scaleX(0.88);
+}
+
+.keycap-svg .shape-label-compact {
+  font-size: 12px;
+  transform: scaleX(0.76);
+}
+
+.consumer-keycap-svg .consumer-icon {
+  color: var(--key-text);
+}
+
+.consumer-strip .consumer-keycap-svg {
+  height: 38px;
+  margin-top: 2px;
+}
+
+.consumer-keycap-svg .icon-fill {
+  fill: currentColor;
+}
+
+.consumer-keycap-svg .icon-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.consumer-keycap-svg .icon-stroke.danger {
+  stroke: #c94d35;
+}
+
+.layer-strip,
+.consumer-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--key-gap);
+}
+
+.layer-strip .picker-key,
+.consumer-strip .picker-key {
+  flex: 0 0 calc(var(--key-unit) * 2.16);
+}
