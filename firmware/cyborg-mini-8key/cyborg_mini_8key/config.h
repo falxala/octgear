@@ -66,6 +66,6 @@ constexpr uint16_t CONFIG_RESPONSE_RETRY_DELAY_US = 100;
 
 constexpr bool README_DRIVE_ENABLED = false;
 constexpr uint8_t README_DRIVE_ENABLE_KEY_INDEX = 4;
-constexpr const char* REMAPPER_URL = "https://falxala.github.io/cyborg_mini_6keys/";
+constexpr const char* REMAPPER_URL = "https://falxala.github.io/octgear/";
 
 }  // namespace Config
