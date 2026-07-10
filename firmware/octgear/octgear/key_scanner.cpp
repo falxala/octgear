@@ -29,27 +29,14 @@ constexpr Config::KeyMask keyBit(uint8_t keyIndex) {
 #if defined(ARDUINO_ARCH_RP2040)
 static_assert(Config::KEY_COUNT <= 16);
 static_assert(Config::PHYSICAL_KEY_COUNT == 8);
-static_assert(Config::KEY_PINS[0] == 7);
-static_assert(Config::KEY_PINS[1] == 6);
-static_assert(Config::KEY_PINS[2] == 5);
-static_assert(Config::KEY_PINS[3] == 4);
-static_assert(Config::KEY_PINS[4] == 12);
-static_assert(Config::KEY_PINS[5] == 11);
-static_assert(Config::KEY_PINS[6] == 10);
-static_assert(Config::KEY_PINS[7] == 9);
 
 Config::KeyMask readRawDirectMaskFast() {
   const uint32_t pins = ~gpio_get_all();
   Config::KeyMask mask = 0;
 
-  mask |= static_cast<Config::KeyMask>(((pins >> 7) & 1U) << 0);
-  mask |= static_cast<Config::KeyMask>(((pins >> 6) & 1U) << 1);
-  mask |= static_cast<Config::KeyMask>(((pins >> 5) & 1U) << 2);
-  mask |= static_cast<Config::KeyMask>(((pins >> 4) & 1U) << 3);
-  mask |= static_cast<Config::KeyMask>(((pins >> 12) & 1U) << 4);
-  mask |= static_cast<Config::KeyMask>(((pins >> 11) & 1U) << 5);
-  mask |= static_cast<Config::KeyMask>(((pins >> 10) & 1U) << 6);
-  mask |= static_cast<Config::KeyMask>(((pins >> 9) & 1U) << 7);
+  for (uint8_t i = 0; i < Config::PHYSICAL_KEY_COUNT; i++) {
+    mask |= static_cast<Config::KeyMask>(((pins >> Config::KEY_PINS[i]) & 1U) << i);
+  }
   mask |= static_cast<Config::KeyMask>(((pins >> Config::ENCODER_SWITCH_PIN) & 1U) << Config::ENCODER_SWITCH_KEY_INDEX);
 
   return mask;

@@ -8,6 +8,7 @@ USB_PID="${USB_PID:-0xC608}"
 USB_MANUFACTURER="${USB_MANUFACTURER:-OctGear}"
 USB_PRODUCT="${USB_PRODUCT:-OctGear}"
 
+node "$ROOT_DIR/scripts/generate-hardware-config.mjs"
 "$ROOT_DIR/scripts/build-rescue-cmd-asset.sh"
 
 exec "$ROOT_DIR/scripts/arduino-cli.sh" compile \

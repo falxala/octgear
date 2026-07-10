@@ -14,4 +14,7 @@
 
 ## Documents
 
+- `profile.json`: ピン割り当てとWeb表示用metadataの単一ソース
 - `pinout.md`: 現行ピン割り当て
+
+`pinout.md`、firmware用 `generated_hardware_config.h`、Web用 `generatedHardwareConfig.ts` は `pnpm hardware:generate` で生成します。

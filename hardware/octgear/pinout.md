@@ -2,7 +2,7 @@
 
 現行8キー + ロータリーエンコーダ版のファームウェアとPCB設計を合わせるためのピン割り当てです。
 
-この表と `firmware/octgear/octgear/config.h` を同時に管理します。
+この表は `hardware/octgear/profile.json` から生成します。
 
 ## Key Inputs
 

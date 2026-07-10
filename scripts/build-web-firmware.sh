@@ -14,6 +14,7 @@ SKETCH_DIR="$ROOT_DIR/firmware/octgear/octgear"
 
 mkdir -p "$BUILD_DIR" "$EXPORT_DIR" "$PUBLIC_DIR"
 
+node "$ROOT_DIR/scripts/generate-hardware-config.mjs"
 "$ROOT_DIR/scripts/build-rescue-cmd-asset.sh"
 
 "$ROOT_DIR/scripts/arduino-cli.sh" compile \

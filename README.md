@@ -35,23 +35,12 @@ docs/hid-report.md              WebHID config report protocol
 scripts/                        Arduino CLI wrapper / firmware build scripts
 ```
 
+Hardware pinout and UI-facing control metadata are sourced from `hardware/octgear/profile.json`.
+Run `pnpm hardware:generate` after editing it, or use the firmware build scripts which run generation automatically.
+
 ## Hardware Summary
 
-現在のピンマップは `hardware/octgear/pinout.md` と `firmware/octgear/octgear/config.h` を正とします。
-
-| Logical key | Firmware index | GPIO | Virtual ground |
-| --- | ---: | ---: | --- |
-| Key 1 | 0 | 7 | VGND1 GPIO 1 |
-| Key 2 | 1 | 6 | VGND1 GPIO 1 |
-| Key 3 | 2 | 5 | VGND1 GPIO 1 |
-| Key 4 | 3 | 4 | VGND1 GPIO 1 |
-| Key 5 | 4 | 12 | VGND2 GPIO 8 |
-| Key 6 | 5 | 11 | VGND2 GPIO 8 |
-| Key 7 | 6 | 10 | VGND2 GPIO 8 |
-| Key 8 | 7 | 9 | VGND2 GPIO 8 |
-| Encoder CCW | 8 | A GPIO 26 / B GPIO 15 | Rotary quadrature |
-| Encoder CW | 9 | A GPIO 26 / B GPIO 15 | Rotary quadrature |
-| Encoder SW | 10 | 14 | Direct input |
+現在のピンマップは `hardware/octgear/profile.json` を正とします。詳細表は `hardware/octgear/pinout.md` に生成します。
 
 Key 5を押しながらUSB接続すると、Read-only README driveとSerial rescueをその起動だけ表示します。通常は非表示です。Windowsではドライブ内の `RESCUE.CMD` から対話式の救済プロンプトを開けます。このモード中は本体LEDを弱い緑で点灯します。
 

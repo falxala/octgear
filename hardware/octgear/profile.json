@@ -1,0 +1,34 @@
+{
+  "productName": "OctGear",
+  "layerCount": 6,
+  "externalRgbLed": false,
+  "oled": false,
+  "keys": [
+    { "id": "k1", "label": "K1", "logicalName": "Key 1", "firmwareIndex": 0, "gpio": 7, "virtualGround": "VGND1", "notes": "Direct input" },
+    { "id": "k2", "label": "K2", "logicalName": "Key 2", "firmwareIndex": 1, "gpio": 6, "virtualGround": "VGND1", "notes": "Direct input" },
+    { "id": "k3", "label": "K3", "logicalName": "Key 3", "firmwareIndex": 2, "gpio": 5, "virtualGround": "VGND1", "notes": "Direct input" },
+    { "id": "k4", "label": "K4", "logicalName": "Key 4", "firmwareIndex": 3, "gpio": 4, "virtualGround": "VGND1", "notes": "Direct input" },
+    { "id": "k5", "label": "K5", "logicalName": "Key 5", "firmwareIndex": 4, "gpio": 12, "virtualGround": "VGND2", "notes": "Direct input / README drive trigger" },
+    { "id": "k6", "label": "K6", "logicalName": "Key 6", "firmwareIndex": 5, "gpio": 11, "virtualGround": "VGND2", "notes": "Direct input" },
+    { "id": "k7", "label": "K7", "logicalName": "Key 7", "firmwareIndex": 6, "gpio": 10, "virtualGround": "VGND2", "notes": "Direct input" },
+    { "id": "k8", "label": "K8", "logicalName": "Key 8", "firmwareIndex": 7, "gpio": 9, "virtualGround": "VGND2", "notes": "Direct input" }
+  ],
+  "virtualGrounds": [
+    { "rail": "VGND1", "firmwareIndex": 0, "gpio": 1, "notes": "Key 1-Key 4 physical group" },
+    { "rail": "VGND2", "firmwareIndex": 1, "gpio": 8, "notes": "Key 5-Key 8 physical group" }
+  ],
+  "encoder": {
+    "enabled": true,
+    "pinCount": 3,
+    "aPin": 26,
+    "bPin": 15,
+    "switchPin": 14,
+    "stepsPerDetent": 2,
+    "reversed": false,
+    "controls": [
+      { "id": "enc-ccw", "label": "CCW", "firmwareIndex": 8, "kind": "encoder", "notes": "Quadrature rotation event" },
+      { "id": "enc-cw", "label": "CW", "firmwareIndex": 9, "kind": "encoder", "notes": "Quadrature rotation event" },
+      { "id": "enc-sw", "label": "SW", "firmwareIndex": 10, "kind": "encoderSwitch", "notes": "Direct input" }
+    ]
+  }
+}

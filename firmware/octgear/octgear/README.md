@@ -23,7 +23,7 @@ Arduino IDE / Arduino CLI で開くスケッチ本体です。
 
 ## Before Flashing
 
-`config.h` のピン番号は現行8キー + ロータリーエンコーダ版の配線に合わせています。ハードウェアを変更する場合は、以下と `hardware/octgear/pinout.md` を同時に更新します。
+ピン番号などのハードウェア調整値は `hardware/octgear/profile.json` を正とし、`generated_hardware_config.h` へ生成します。ハードウェアを変更する場合はJSONを更新し、`pnpm hardware:generate` を実行します。
 
 - `KEY_PINS`
 - `ENCODER_A_PIN`

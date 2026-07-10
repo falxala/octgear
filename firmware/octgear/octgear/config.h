@@ -1,36 +1,12 @@
 #pragma once
 
 #include <Arduino.h>
+#include "generated_hardware_config.h"
 
 namespace Config {
 
-constexpr uint8_t PHYSICAL_KEY_COUNT = 8;
-constexpr uint8_t ENCODER_CONTROL_COUNT = 3;
-constexpr uint8_t KEY_COUNT = PHYSICAL_KEY_COUNT + ENCODER_CONTROL_COUNT;
-constexpr uint8_t LAYER_COUNT = 6;
 constexpr uint8_t KEYBOARD_REPORT_SLOTS = 6;
-constexpr uint8_t VIRTUAL_GROUND_COUNT = 2;
 constexpr uint8_t CONFIG_REPORT_SIZE = 32;
-
-using KeyMask = uint16_t;
-
-constexpr uint8_t KEY_PINS[PHYSICAL_KEY_COUNT] = {
-  7, 6, 5, 4, 12, 11, 10, 9
-};
-
-constexpr uint8_t ENCODER_A_PIN = 26;
-constexpr uint8_t ENCODER_B_PIN = 15;
-constexpr uint8_t ENCODER_SWITCH_PIN = 14;
-constexpr uint8_t ENCODER_CCW_KEY_INDEX = PHYSICAL_KEY_COUNT;
-constexpr uint8_t ENCODER_CW_KEY_INDEX = PHYSICAL_KEY_COUNT + 1;
-constexpr uint8_t ENCODER_SWITCH_KEY_INDEX = PHYSICAL_KEY_COUNT + 2;
-constexpr int8_t ENCODER_STEPS_PER_DETENT = 2;
-constexpr bool ENCODER_REVERSED = false;
-
-// These pins are driven LOW and used as virtual ground rails.
-constexpr uint8_t VIRTUAL_GROUND_PINS[VIRTUAL_GROUND_COUNT] = {
-  1, 8
-};
 
 enum class StatusLedKind : uint8_t {
   None,
