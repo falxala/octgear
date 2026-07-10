@@ -25,8 +25,8 @@ Direct入力は8本です。各入力はファームウェアで `INPUT_PULLUP` 
 
 | Control | Firmware index | GPIO | Notes |
 | --- | ---: | --- | --- |
-| Encoder CCW | 8 | A: 15 / B: 26 | Quadrature rotation event |
-| Encoder CW | 9 | A: 15 / B: 26 | Quadrature rotation event |
+| Encoder CCW | 8 | A: 26 / B: 15 | Quadrature rotation event |
+| Encoder CW | 9 | A: 26 / B: 15 | Quadrature rotation event |
 | Encoder SW | 10 | 14 | Direct input |
 
 ## Virtual Ground
