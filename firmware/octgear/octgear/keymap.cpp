@@ -17,6 +17,9 @@ void setDefaultLayer0() {
   keymap[0][5] = consumerAssignment(HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK);
   keymap[0][6] = consumerAssignment(HID_USAGE_CONSUMER_PLAY_PAUSE);
   keymap[0][7] = consumerAssignment(HID_USAGE_CONSUMER_SCAN_NEXT_TRACK);
+  keymap[0][Config::ENCODER_CCW_KEY_INDEX] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_DECREMENT);
+  keymap[0][Config::ENCODER_CW_KEY_INDEX] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_INCREMENT);
+  keymap[0][Config::ENCODER_SWITCH_KEY_INDEX] = consumerAssignment(HID_USAGE_CONSUMER_PLAY_PAUSE);
 }
 
 void setDefaultLayer1() {

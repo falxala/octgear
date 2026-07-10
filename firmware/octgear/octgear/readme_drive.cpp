@@ -101,7 +101,7 @@ bool readmeDriveEnabledAtBoot() {
     return true;
   }
 
-  if (Config::README_DRIVE_ENABLE_KEY_INDEX >= Config::KEY_COUNT) {
+  if (Config::README_DRIVE_ENABLE_KEY_INDEX >= Config::PHYSICAL_KEY_COUNT) {
     return false;
   }
 

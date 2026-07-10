@@ -25,7 +25,11 @@ uint8_t consumerTapQueueHead = 0;
 uint8_t consumerTapQueueCount = 0;
 
 uint8_t keyboardReportIdFor(uint8_t keyIndex) {
-  return static_cast<uint8_t>(RID_KEYBOARD_1 + keyIndex);
+  if (keyIndex < Config::PHYSICAL_KEY_COUNT) {
+    return static_cast<uint8_t>(RID_KEYBOARD_1 + keyIndex);
+  }
+
+  return static_cast<uint8_t>(RID_KEYBOARD_9 + (keyIndex - Config::PHYSICAL_KEY_COUNT));
 }
 
 bool timeReached(uint32_t nowUs, uint32_t deadlineUs) {
@@ -33,11 +37,15 @@ bool timeReached(uint32_t nowUs, uint32_t deadlineUs) {
 }
 
 void queueKeyboardReport(uint8_t reportId, uint8_t modifier, const uint8_t* keycodes) {
-  if (reportId < RID_KEYBOARD_1 || reportId > RID_KEYBOARD_8) {
+  if (!((reportId >= RID_KEYBOARD_1 && reportId <= RID_KEYBOARD_8) ||
+        (reportId >= RID_KEYBOARD_9 && reportId <= RID_KEYBOARD_11))) {
     return;
   }
 
-  KeyboardReportState& report = keyboardReports[reportId - RID_KEYBOARD_1];
+  const uint8_t reportIndex = reportId <= RID_KEYBOARD_8
+    ? static_cast<uint8_t>(reportId - RID_KEYBOARD_1)
+    : static_cast<uint8_t>(Config::PHYSICAL_KEY_COUNT + (reportId - RID_KEYBOARD_9));
+  KeyboardReportState& report = keyboardReports[reportIndex];
   report.modifier = modifier;
   for (uint8_t i = 0; i < Config::KEYBOARD_REPORT_SLOTS; i++) {
     report.keycodes[i] = keycodes[i];

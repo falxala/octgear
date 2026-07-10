@@ -1,13 +1,13 @@
 # OctGear Firmware
 
-現行8キー版のRP2040ファームウェアです。
+現行8キー + ロータリーエンコーダ版のRP2040ファームウェアです。
 
 Arduinoスケッチ本体は `octgear/` にあります。
 
 ## Current Scope
 
 - 物理キーは8キー
-- ロータリーエンコーダは搭載しない
+- ロータリーエンコーダはA/B相 + SWの3ピン
 - 外付けRGB LED / OLED は使わない
 - 表示は本体LEDのみ。通常のキーボード接続時はレイヤー別固定色、Remapper接続中だけカラーホイールで状態を示す
 - 設定通信はSerialではなくUSB HID / WebHID用reportを使う
@@ -23,7 +23,7 @@ Arduinoスケッチ本体は `octgear/` にあります。
 - `keyPins[8]` を `INPUT_PULLUP` として読む
 - `virtualGroundPins[2]` は常時 `OUTPUT LOW`
 - 押下時はDirect入力が `LOW`
-- 8キーの状態は1バイトのビットマスクで扱う
+- 8キー + エンコーダ3操作の状態は16bitビットマスクで扱う
 - マトリクススキャンは行わない
 
 ## Build

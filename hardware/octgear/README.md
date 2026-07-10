@@ -1,10 +1,11 @@
 # OctGear Hardware
 
-現行8キー版ハードウェア資料です。
+現行8キー + ロータリーエンコーダ版ハードウェア資料です。
 
 ## 前提
 
 - 8本のDirect入力ピンを使う
+- ロータリーエンコーダはA/B相 + SWの3ピンを使う
 - 仮想GND用GPIOは2本
 - 仮想GND用GPIOはファームウェア側で `OUTPUT LOW`
 - 外付けRGB LED / OLED は廃止

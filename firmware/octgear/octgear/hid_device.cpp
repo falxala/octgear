@@ -23,8 +23,8 @@ Adafruit_USBD_HID usbHid(
 );
 uint32_t lastRemapperHeartbeatMs = 0;
 bool wakeKeyChangePending = false;
-uint8_t wakeOldMask = 0;
-uint8_t wakeNewMask = 0;
+Config::KeyMask wakeOldMask = 0;
+Config::KeyMask wakeNewMask = 0;
 uint8_t wakeLayer = 0;
 bool momentaryLayerActive[Config::KEY_COUNT] = { false };
 uint8_t momentaryLayerTargets[Config::KEY_COUNT] = { 0 };
@@ -33,7 +33,11 @@ uint32_t nextMomentaryLayerOrder = 1;
 uint8_t momentaryBaseLayer = 0;
 
 uint8_t keyboardReportIdFor(uint8_t keyIndex) {
-  return static_cast<uint8_t>(RID_KEYBOARD_1 + keyIndex);
+  if (keyIndex < Config::PHYSICAL_KEY_COUNT) {
+    return static_cast<uint8_t>(RID_KEYBOARD_1 + keyIndex);
+  }
+
+  return static_cast<uint8_t>(RID_KEYBOARD_9 + (keyIndex - Config::PHYSICAL_KEY_COUNT));
 }
 
 bool sendConfigReportWhenReady(const uint8_t* report, uint8_t length) {
@@ -335,7 +339,7 @@ void cyclePersistentLayer() {
   setActiveLayer(nextLayer(activeLayer()));
 }
 
-void queueWakeKeyChange(uint8_t oldMask, uint8_t newMask, uint8_t layer) {
+void queueWakeKeyChange(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t layer) {
   if (!wakeKeyChangePending) {
     wakeOldMask = oldMask;
   }
@@ -350,8 +354,8 @@ void flushWakeKeyChange() {
     return;
   }
 
-  const uint8_t oldMask = wakeOldMask;
-  const uint8_t newMask = wakeNewMask;
+  const Config::KeyMask oldMask = wakeOldMask;
+  const Config::KeyMask newMask = wakeNewMask;
   const uint8_t layer = wakeLayer;
   wakeKeyChangePending = false;
   sendKeyChanges(oldMask, newMask, layer);
@@ -398,18 +402,18 @@ bool remapperConnected() {
   return true;
 }
 
-void sendKeyChanges(uint8_t oldMask, uint8_t newMask, uint8_t layer) {
+void sendKeyChanges(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t layer) {
   if (TinyUSBDevice.suspended()) {
     queueWakeKeyChange(oldMask, newMask, layer);
     TinyUSBDevice.remoteWakeup();
     return;
   }
 
-  const uint8_t changed = oldMask ^ newMask;
+  const Config::KeyMask changed = oldMask ^ newMask;
   const bool remapperActive = remapperConnected();
 
   for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
-    const uint8_t bit = static_cast<uint8_t>(1U << keyIndex);
+    const Config::KeyMask bit = static_cast<Config::KeyMask>(1U << keyIndex);
     if ((changed & bit) == 0) {
       continue;
     }

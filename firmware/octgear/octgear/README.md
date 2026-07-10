@@ -8,7 +8,7 @@ Arduino IDE / Arduino CLI で開くスケッチ本体です。
 | --- | --- |
 | `octgear.ino` | `setup()` / `loop()` |
 | `config.h` | ピン番号、キー数、reportサイズなどの設定 |
-| `key_scanner.*` | 8本Direct入力 + 2本仮想GNDのスキャン |
+| `key_scanner.*` | 8本Direct入力 + エンコーダA/B/SW + 2本仮想GNDのスキャン |
 | `keymap.*` | レイヤー別キーマップ |
 | `keymap_storage.*` | EEPROMエミュレーション上のキーマップ永続化 |
 | `key_assignment.*` | キー割り当て型 |
@@ -23,9 +23,12 @@ Arduino IDE / Arduino CLI で開くスケッチ本体です。
 
 ## Before Flashing
 
-`config.h` のピン番号は現行8キー版の配線に合わせています。ハードウェアを変更する場合は、以下と `hardware/octgear/pinout.md` を同時に更新します。
+`config.h` のピン番号は現行8キー + ロータリーエンコーダ版の配線に合わせています。ハードウェアを変更する場合は、以下と `hardware/octgear/pinout.md` を同時に更新します。
 
 - `KEY_PINS`
+- `ENCODER_A_PIN`
+- `ENCODER_B_PIN`
+- `ENCODER_SWITCH_PIN`
 - `VIRTUAL_GROUND_PINS`
 - `STATUS_LED_KIND`
 - `STATUS_LED_PIN`
@@ -106,14 +109,14 @@ diag
 bootloader
 ```
 
-`none` / `key` / `consumer` / `cycle` / `hold` は指定キーの割り当てをすぐ保存します。key番号は `1-8`、layerは `0-5` です。
+`none` / `key` / `consumer` / `cycle` / `hold` は指定キーの割り当てをすぐ保存します。key番号は `1-11`、layerは `0-5` です。
 
 ### Serial Rescue Examples
 
 `key` はKeyboard assignmentを書き込みます。形式は以下です。
 
 ```text
-key <layer> <key 1-8> <modifier> <keycode> [keycode...]
+key <layer> <key 1-11> <modifier> <keycode> [keycode...]
 ```
 
 例:
@@ -207,7 +210,7 @@ Webの `diagnostics.html` は販売前/出荷前チェック用です。
 - WebHID接続状態
 - 診断用 `DiagnosticReport` の送受信確認
 - キーマップ保存領域を使った `DiagnosticStorage` の書込/読込/復元確認
-- 物理キー8個の押下確認
+- 物理キー8個 + エンコーダ3操作の入力確認
 - `KeyEvent` 受信確認
 - firmwareが返す report key count
 

@@ -25,7 +25,7 @@ export const HARDWARE_CONFIG = {
   oled: false,
   encoder: {
     enabled: true,
-    pinCount: 5,
+    pinCount: 3,
     controls: encoderControls,
   },
   keyPins: keyControls,

@@ -13,6 +13,9 @@ enum HidReportId : uint8_t {
   RID_KEYBOARD_8,
   RID_CONSUMER_CONTROL,
   RID_CONFIG,
+  RID_KEYBOARD_9,
+  RID_KEYBOARD_10,
+  RID_KEYBOARD_11,
 };
 
 enum class ConfigCommand : uint8_t {

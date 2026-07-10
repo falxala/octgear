@@ -1,6 +1,6 @@
 # Pinout
 
-現行8キー版のファームウェアとPCB設計を合わせるためのピン割り当てです。
+現行8キー + ロータリーエンコーダ版のファームウェアとPCB設計を合わせるためのピン割り当てです。
 
 この表と `firmware/octgear/octgear/config.h` を同時に管理します。
 
@@ -19,6 +19,16 @@ Direct入力は8本です。各入力はファームウェアで `INPUT_PULLUP` 
 | Key 7 | 6 | 10 | VGND2 | Direct input |
 | Key 8 | 7 | 9 | VGND2 | Direct input |
 
+## Rotary Encoder
+
+エンコーダのA/B相は回転方向ごとの仮想キーとして扱います。SWは通常のDirect入力と同じく `INPUT_PULLUP` です。
+
+| Control | Firmware index | GPIO | Notes |
+| --- | ---: | --- | --- |
+| Encoder CCW | 8 | A: 13 / B: 14 | Quadrature rotation event |
+| Encoder CW | 9 | A: 13 / B: 14 | Quadrature rotation event |
+| Encoder SW | 10 | 15 | Direct input |
+
 ## Virtual Ground
 
 仮想GND用GPIOは2本です。どちらもファームウェアで常時 `OUTPUT LOW` に設定します。
@@ -32,7 +42,6 @@ Direct入力は8本です。各入力はファームウェアで `INPUT_PULLUP` 
 
 新ハードウェアでは以下を使いません。
 
-- Rotary encoder
 - External RGB LED / WS2812B
 - OLED
 
