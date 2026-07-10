@@ -18,9 +18,9 @@ constexpr uint8_t KEY_PINS[PHYSICAL_KEY_COUNT] = {
   7, 6, 5, 4, 12, 11, 10, 9
 };
 
-constexpr uint8_t ENCODER_A_PIN = 13;
-constexpr uint8_t ENCODER_B_PIN = 14;
-constexpr uint8_t ENCODER_SWITCH_PIN = 15;
+constexpr uint8_t ENCODER_A_PIN = 15;
+constexpr uint8_t ENCODER_B_PIN = 26;
+constexpr uint8_t ENCODER_SWITCH_PIN = 14;
 constexpr uint8_t ENCODER_CCW_KEY_INDEX = PHYSICAL_KEY_COUNT;
 constexpr uint8_t ENCODER_CW_KEY_INDEX = PHYSICAL_KEY_COUNT + 1;
 constexpr uint8_t ENCODER_SWITCH_KEY_INDEX = PHYSICAL_KEY_COUNT + 2;

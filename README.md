@@ -49,9 +49,9 @@ scripts/                        Arduino CLI wrapper / firmware build scripts
 | Key 6 | 5 | 11 | VGND2 GPIO 8 |
 | Key 7 | 6 | 10 | VGND2 GPIO 8 |
 | Key 8 | 7 | 9 | VGND2 GPIO 8 |
-| Encoder CCW | 8 | A GPIO 13 / B GPIO 14 | Rotary quadrature |
-| Encoder CW | 9 | A GPIO 13 / B GPIO 14 | Rotary quadrature |
-| Encoder SW | 10 | 15 | Direct input |
+| Encoder CCW | 8 | A GPIO 15 / B GPIO 26 | Rotary quadrature |
+| Encoder CW | 9 | A GPIO 15 / B GPIO 26 | Rotary quadrature |
+| Encoder SW | 10 | 14 | Direct input |
 
 Key 5を押しながらUSB接続すると、Read-only README driveとSerial rescueをその起動だけ表示します。通常は非表示です。Windowsではドライブ内の `RESCUE.CMD` から対話式の救済プロンプトを開けます。このモード中は本体LEDを弱い緑で点灯します。
 
