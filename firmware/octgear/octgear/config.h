@@ -24,7 +24,7 @@ constexpr uint8_t ENCODER_SWITCH_PIN = 14;
 constexpr uint8_t ENCODER_CCW_KEY_INDEX = PHYSICAL_KEY_COUNT;
 constexpr uint8_t ENCODER_CW_KEY_INDEX = PHYSICAL_KEY_COUNT + 1;
 constexpr uint8_t ENCODER_SWITCH_KEY_INDEX = PHYSICAL_KEY_COUNT + 2;
-constexpr int8_t ENCODER_STEPS_PER_DETENT = 4;
+constexpr int8_t ENCODER_STEPS_PER_DETENT = 2;
 constexpr bool ENCODER_REVERSED = false;
 
 // These pins are driven LOW and used as virtual ground rails.
