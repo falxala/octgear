@@ -112,7 +112,7 @@ void handleSetLayerEnabled(const uint8_t* buffer, uint16_t size) {
     return;
   }
 
-  if (!saveLayerSettingsToStorage()) {
+  if (!saveEnabledLayerMaskToStorage()) {
     setEnabledLayerMask(previousMask);
     setActiveLayer(previousActiveLayer);
     sendConfigResponse(ConfigCommand::SetLayerEnabled, ConfigStatus::StorageError, nullptr, 0);

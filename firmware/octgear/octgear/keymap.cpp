@@ -140,8 +140,7 @@ bool setLayerEnabled(uint8_t layer, bool enabled) {
 }
 
 void setEnabledLayerMask(uint8_t mask) {
-  const uint8_t normalizedMask = mask == 0xFF ? Config::DEFAULT_ENABLED_LAYER_MASK : mask;
-  currentEnabledLayerMask = static_cast<uint8_t>((normalizedMask & ALL_LAYERS_ENABLED_MASK) | 0x01U);
+  currentEnabledLayerMask = static_cast<uint8_t>((mask & ALL_LAYERS_ENABLED_MASK) | 0x01U);
   if (!layerEnabled(currentLayer)) {
     currentLayer = 0;
   }

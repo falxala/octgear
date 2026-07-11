@@ -9,16 +9,14 @@
 namespace {
 
 constexpr uint8_t STORAGE_MAGIC[4] = { 'C', 'M', '8', 'K' };
-constexpr uint8_t STORAGE_VERSION = 4;
+constexpr uint8_t STORAGE_VERSION = 5;
 constexpr uint8_t STORAGE_HEADER_SIZE = 8;
 constexpr uint8_t ASSIGNMENT_RECORD_SIZE = 11;
-constexpr uint8_t LEGACY_LAYER_COUNT = 6;
-constexpr uint8_t LAYER_COLOR_MARKER = 0xC7;
-constexpr int LAYER_SETTINGS_ADDRESS =
+constexpr uint8_t LAYER_COLOR_SIZE = 3;
+constexpr int ENABLED_LAYER_MASK_ADDRESS =
   STORAGE_HEADER_SIZE + (Config::LAYER_COUNT * Config::KEY_COUNT * ASSIGNMENT_RECORD_SIZE);
-constexpr int LAYER_COLOR_MARKER_ADDRESS = LAYER_SETTINGS_ADDRESS + 1;
-constexpr int LAYER_COLORS_ADDRESS = LAYER_COLOR_MARKER_ADDRESS + 1;
-constexpr int STORAGE_SIZE = LAYER_COLORS_ADDRESS + (Config::LAYER_COUNT * 3);
+constexpr int LAYER_COLORS_ADDRESS = ENABLED_LAYER_MASK_ADDRESS + 1;
+constexpr int STORAGE_SIZE = LAYER_COLORS_ADDRESS + (Config::LAYER_COUNT * LAYER_COLOR_SIZE);
 
 static_assert(STORAGE_SIZE <= 4096, "RP2040 EEPROM emulation supports up to 4096 bytes");
 
@@ -31,7 +29,7 @@ bool validKind(uint8_t value) {
   return value <= static_cast<uint8_t>(AssignmentKind::LayerPrevious);
 }
 
-bool baseHeaderMatches() {
+bool headerMatches() {
   for (uint8_t i = 0; i < sizeof(STORAGE_MAGIC); i++) {
     if (EEPROM.read(i) != STORAGE_MAGIC[i]) {
       return false;
@@ -39,24 +37,13 @@ bool baseHeaderMatches() {
   }
 
   return EEPROM.read(4) == STORAGE_VERSION &&
+         EEPROM.read(5) == Config::LAYER_COUNT &&
          EEPROM.read(6) == Config::KEY_COUNT &&
          EEPROM.read(7) == ASSIGNMENT_RECORD_SIZE;
 }
 
-bool headerMatches() {
-  return baseHeaderMatches() && EEPROM.read(5) == Config::LAYER_COUNT;
-}
-
-int layerSettingsAddress(uint8_t layerCount) {
-  return STORAGE_HEADER_SIZE + (layerCount * Config::KEY_COUNT * ASSIGNMENT_RECORD_SIZE);
-}
-
-int layerColorMarkerAddress(uint8_t layerCount) {
-  return layerSettingsAddress(layerCount) + 1;
-}
-
-int layerColorAddress(uint8_t layer, int colorsAddress = LAYER_COLORS_ADDRESS) {
-  return colorsAddress + (layer * 3);
+int layerColorAddress(uint8_t layer) {
+  return LAYER_COLORS_ADDRESS + (layer * LAYER_COLOR_SIZE);
 }
 
 void writeLayerColor(uint8_t layer) {
@@ -68,7 +55,6 @@ void writeLayerColor(uint8_t layer) {
 }
 
 void writeAllLayerColors() {
-  EEPROM.write(LAYER_COLOR_MARKER_ADDRESS, LAYER_COLOR_MARKER);
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
     writeLayerColor(layer);
   }
@@ -130,26 +116,13 @@ void beginKeymapStorage() {
 }
 
 bool loadKeymapFromStorage() {
-  if (!baseHeaderMatches()) {
-    return false;
-  }
-
-  const uint8_t storedLayerCount = EEPROM.read(5);
-  const bool migratingLegacyLayers =
-    Config::LAYER_COUNT == 8 && storedLayerCount == LEGACY_LAYER_COUNT;
-  if (storedLayerCount != Config::LAYER_COUNT && !migratingLegacyLayers) {
+  if (!headerMatches()) {
     return false;
   }
 
   KeyAssignment loaded[Config::LAYER_COUNT][Config::KEY_COUNT];
 
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
-    for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
-      loaded[layer][keyIndex] = assignmentFor(layer, keyIndex);
-    }
-  }
-
-  for (uint8_t layer = 0; layer < storedLayerCount; layer++) {
     for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
       if (!readAssignmentRecord(recordAddress(layer, keyIndex), loaded[layer][keyIndex])) {
         return false;
@@ -163,23 +136,14 @@ bool loadKeymapFromStorage() {
     }
   }
 
-  setEnabledLayerMask(EEPROM.read(layerSettingsAddress(storedLayerCount)));
-
-  const int storedColorMarkerAddress = layerColorMarkerAddress(storedLayerCount);
-  if (!migratingLegacyLayers && EEPROM.read(storedColorMarkerAddress) == LAYER_COLOR_MARKER) {
-    const int storedColorsAddress = storedColorMarkerAddress + 1;
-    for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
-      const int address = layerColorAddress(layer, storedColorsAddress);
-      setLayerColor(layer, {
-        EEPROM.read(address),
-        EEPROM.read(address + 1),
-        EEPROM.read(address + 2),
-      });
-    }
-  }
-
-  if (migratingLegacyLayers) {
-    saveKeymapToStorage();
+  setEnabledLayerMask(EEPROM.read(ENABLED_LAYER_MASK_ADDRESS));
+  for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    const int address = layerColorAddress(layer);
+    setLayerColor(layer, {
+      EEPROM.read(address),
+      EEPROM.read(address + 1),
+      EEPROM.read(address + 2),
+    });
   }
 
   return true;
@@ -194,7 +158,7 @@ bool saveKeymapToStorage() {
     }
   }
 
-  EEPROM.write(LAYER_SETTINGS_ADDRESS, enabledLayerMask());
+  EEPROM.write(ENABLED_LAYER_MASK_ADDRESS, enabledLayerMask());
   writeAllLayerColors();
 
   return EEPROM.commit();
@@ -213,12 +177,12 @@ bool saveAssignmentToStorage(uint8_t layer, uint8_t keyIndex) {
   return EEPROM.commit();
 }
 
-bool saveLayerSettingsToStorage() {
+bool saveEnabledLayerMaskToStorage() {
   if (!headerMatches()) {
     return saveKeymapToStorage();
   }
 
-  EEPROM.write(LAYER_SETTINGS_ADDRESS, enabledLayerMask());
+  EEPROM.write(ENABLED_LAYER_MASK_ADDRESS, enabledLayerMask());
   return EEPROM.commit();
 }
 
@@ -231,11 +195,7 @@ bool saveLayerColorToStorage(uint8_t layer) {
     return saveKeymapToStorage();
   }
 
-  if (EEPROM.read(LAYER_COLOR_MARKER_ADDRESS) != LAYER_COLOR_MARKER) {
-    writeAllLayerColors();
-  } else {
-    writeLayerColor(layer);
-  }
+  writeLayerColor(layer);
   return EEPROM.commit();
 }
 
