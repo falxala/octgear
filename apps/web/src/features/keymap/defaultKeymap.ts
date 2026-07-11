@@ -15,27 +15,27 @@ export function createInitialKeymap(): DeviceKeymap {
 
   applyLayerAssignments(keymap, 0, [
     createLayerCycleAssignment(),
-    createConsumerAssignment(0x00e9),
-    createConsumerAssignment(0x00ea),
     createConsumerAssignment(0x00e2),
+    createConsumerAssignment(0x00ea),
+    createConsumerAssignment(0x00e9),
     createMomentaryLayerAssignment(1),
     createConsumerAssignment(0x00b6),
     createConsumerAssignment(0x00cd),
     createConsumerAssignment(0x00b5),
     createConsumerAssignment(0x00ea),
     createConsumerAssignment(0x00e9),
-    createConsumerAssignment(0x00cd),
+    createBlankAssignment(),
   ]);
 
   applyLayerAssignments(keymap, 1, [
+    createLayerCycleAssignment(),
     createKeyboardAssignment(0x14),
     createKeyboardAssignment(0x1a),
     createKeyboardAssignment(0x08),
-    createKeyboardAssignment(0x15),
+    createBlankAssignment(),
     createKeyboardAssignment(0x04),
     createKeyboardAssignment(0x16),
     createKeyboardAssignment(0x07),
-    createKeyboardAssignment(0x09),
   ]);
 
   applyLayerAssignments(keymap, 2, [

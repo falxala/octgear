@@ -13,27 +13,24 @@ LayerColor currentLayerColors[Config::LAYER_COUNT];
 KeyAssignment keymap[Config::LAYER_COUNT][Config::KEY_COUNT];
 
 void setDefaultLayer0() {
-  keymap[0][1] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_INCREMENT);
+  keymap[0][1] = consumerAssignment(HID_USAGE_CONSUMER_MUTE);
   keymap[0][2] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_DECREMENT);
-  keymap[0][3] = consumerAssignment(HID_USAGE_CONSUMER_MUTE);
+  keymap[0][3] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_INCREMENT);
   keymap[0][4] = momentaryLayerAssignment(1);
   keymap[0][5] = consumerAssignment(HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK);
   keymap[0][6] = consumerAssignment(HID_USAGE_CONSUMER_PLAY_PAUSE);
   keymap[0][7] = consumerAssignment(HID_USAGE_CONSUMER_SCAN_NEXT_TRACK);
   keymap[0][Config::ENCODER_CCW_KEY_INDEX] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_DECREMENT);
   keymap[0][Config::ENCODER_CW_KEY_INDEX] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_INCREMENT);
-  keymap[0][Config::ENCODER_SWITCH_KEY_INDEX] = consumerAssignment(HID_USAGE_CONSUMER_PLAY_PAUSE);
 }
 
 void setDefaultLayer1() {
-  keymap[1][0] = keyboardAssignment(HID_KEY_Q);
-  keymap[1][1] = keyboardAssignment(HID_KEY_W);
-  keymap[1][2] = keyboardAssignment(HID_KEY_E);
-  keymap[1][3] = keyboardAssignment(HID_KEY_R);
-  keymap[1][4] = keyboardAssignment(HID_KEY_A);
-  keymap[1][5] = keyboardAssignment(HID_KEY_S);
-  keymap[1][6] = keyboardAssignment(HID_KEY_D);
-  keymap[1][7] = keyboardAssignment(HID_KEY_F);
+  keymap[1][1] = keyboardAssignment(HID_KEY_Q);
+  keymap[1][2] = keyboardAssignment(HID_KEY_W);
+  keymap[1][3] = keyboardAssignment(HID_KEY_E);
+  keymap[1][5] = keyboardAssignment(HID_KEY_A);
+  keymap[1][6] = keyboardAssignment(HID_KEY_S);
+  keymap[1][7] = keyboardAssignment(HID_KEY_D);
 }
 
 void setDefaultLayer2() {
