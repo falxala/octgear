@@ -8,7 +8,8 @@ namespace Config {
 constexpr uint8_t PHYSICAL_KEY_COUNT = 8;
 constexpr uint8_t ENCODER_CONTROL_COUNT = 3;
 constexpr uint8_t KEY_COUNT = PHYSICAL_KEY_COUNT + ENCODER_CONTROL_COUNT;
-constexpr uint8_t LAYER_COUNT = 6;
+constexpr uint8_t LAYER_COUNT = 8;
+constexpr uint8_t DEFAULT_ENABLED_LAYER_MASK = 0x03;
 constexpr uint8_t VIRTUAL_GROUND_COUNT = 2;
 
 using KeyMask = uint16_t;

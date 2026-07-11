@@ -174,7 +174,8 @@ void handleSetKey(const uint8_t* buffer, uint16_t size) {
       assignment.kind != AssignmentKind::Keyboard &&
       assignment.kind != AssignmentKind::Consumer &&
       assignment.kind != AssignmentKind::LayerCycle &&
-      assignment.kind != AssignmentKind::MomentaryLayer) {
+      assignment.kind != AssignmentKind::MomentaryLayer &&
+      assignment.kind != AssignmentKind::LayerPrevious) {
     sendConfigResponse(ConfigCommand::SetKey, ConfigStatus::OutOfRange, nullptr, 0);
     return;
   }
@@ -371,6 +372,17 @@ uint8_t nextEnabledLayer(uint8_t layer) {
   return 0;
 }
 
+uint8_t previousEnabledLayer(uint8_t layer) {
+  for (uint8_t offset = 1; offset <= Config::LAYER_COUNT; offset++) {
+    const uint8_t candidate = static_cast<uint8_t>((layer + Config::LAYER_COUNT - offset) % Config::LAYER_COUNT);
+    if (layerEnabled(candidate)) {
+      return candidate;
+    }
+  }
+
+  return 0;
+}
+
 void cyclePersistentLayer() {
   if (anyMomentaryLayerActive()) {
     momentaryBaseLayer = nextEnabledLayer(momentaryBaseLayer);
@@ -379,6 +391,16 @@ void cyclePersistentLayer() {
   }
 
   setActiveLayer(nextEnabledLayer(activeLayer()));
+}
+
+void cyclePersistentLayerBackward() {
+  if (anyMomentaryLayerActive()) {
+    momentaryBaseLayer = previousEnabledLayer(momentaryBaseLayer);
+    applyMomentaryLayerState();
+    return;
+  }
+
+  setActiveLayer(previousEnabledLayer(activeLayer()));
 }
 
 void queueWakeKeyChange(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t layer) {
@@ -492,6 +514,10 @@ void sendKeyChanges(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t la
       case AssignmentKind::LayerCycle:
         queueAllKeyboardReleases();
         cyclePersistentLayer();
+        break;
+      case AssignmentKind::LayerPrevious:
+        queueAllKeyboardReleases();
+        cyclePersistentLayerBackward();
         break;
       case AssignmentKind::MomentaryLayer:
         pressMomentaryLayer(keyIndex, layer, assignment.targetLayer);

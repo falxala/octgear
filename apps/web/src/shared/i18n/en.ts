@@ -122,7 +122,8 @@ export const en: typeof ja = {
     none: "None",
     keyboard: "Keyboard",
     consumer: "Consumer",
-    layerCycle: "Layer Cycle",
+    layerCycle: "Next Layer",
+    layerPrevious: "Previous Layer",
     momentaryLayer: "Momentary Layer",
     usage: "Usage",
     targetLayer: "Target layer",
@@ -130,6 +131,7 @@ export const en: typeof ja = {
     label: "Label",
     usageHex: "Usage hex",
     layerCycleLabel: "Next Layer",
+    layerPreviousLabel: "Previous Layer",
     momentaryLayerLabel: (layer) => `Hold Layer ${layer}`,
   },
   palette: {

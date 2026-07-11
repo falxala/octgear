@@ -12,6 +12,7 @@ constexpr uint8_t STORAGE_MAGIC[4] = { 'C', 'M', '8', 'K' };
 constexpr uint8_t STORAGE_VERSION = 4;
 constexpr uint8_t STORAGE_HEADER_SIZE = 8;
 constexpr uint8_t ASSIGNMENT_RECORD_SIZE = 11;
+constexpr uint8_t LEGACY_LAYER_COUNT = 6;
 constexpr int LAYER_SETTINGS_ADDRESS =
   STORAGE_HEADER_SIZE + (Config::LAYER_COUNT * Config::KEY_COUNT * ASSIGNMENT_RECORD_SIZE);
 constexpr int STORAGE_SIZE = LAYER_SETTINGS_ADDRESS + 1;
@@ -24,10 +25,10 @@ int recordAddress(uint8_t layer, uint8_t keyIndex) {
 }
 
 bool validKind(uint8_t value) {
-  return value <= static_cast<uint8_t>(AssignmentKind::MomentaryLayer);
+  return value <= static_cast<uint8_t>(AssignmentKind::LayerPrevious);
 }
 
-bool headerMatches() {
+bool baseHeaderMatches() {
   for (uint8_t i = 0; i < sizeof(STORAGE_MAGIC); i++) {
     if (EEPROM.read(i) != STORAGE_MAGIC[i]) {
       return false;
@@ -35,9 +36,16 @@ bool headerMatches() {
   }
 
   return EEPROM.read(4) == STORAGE_VERSION &&
-         EEPROM.read(5) == Config::LAYER_COUNT &&
          EEPROM.read(6) == Config::KEY_COUNT &&
          EEPROM.read(7) == ASSIGNMENT_RECORD_SIZE;
+}
+
+bool headerMatches() {
+  return baseHeaderMatches() && EEPROM.read(5) == Config::LAYER_COUNT;
+}
+
+int layerSettingsAddress(uint8_t layerCount) {
+  return STORAGE_HEADER_SIZE + (layerCount * Config::KEY_COUNT * ASSIGNMENT_RECORD_SIZE);
 }
 
 void writeHeader() {
@@ -96,13 +104,26 @@ void beginKeymapStorage() {
 }
 
 bool loadKeymapFromStorage() {
-  if (!headerMatches()) {
+  if (!baseHeaderMatches()) {
+    return false;
+  }
+
+  const uint8_t storedLayerCount = EEPROM.read(5);
+  const bool migratingLegacyLayers =
+    Config::LAYER_COUNT == 8 && storedLayerCount == LEGACY_LAYER_COUNT;
+  if (storedLayerCount != Config::LAYER_COUNT && !migratingLegacyLayers) {
     return false;
   }
 
   KeyAssignment loaded[Config::LAYER_COUNT][Config::KEY_COUNT];
 
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
+      loaded[layer][keyIndex] = assignmentFor(layer, keyIndex);
+    }
+  }
+
+  for (uint8_t layer = 0; layer < storedLayerCount; layer++) {
     for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
       if (!readAssignmentRecord(recordAddress(layer, keyIndex), loaded[layer][keyIndex])) {
         return false;
@@ -116,7 +137,11 @@ bool loadKeymapFromStorage() {
     }
   }
 
-  setEnabledLayerMask(EEPROM.read(LAYER_SETTINGS_ADDRESS));
+  setEnabledLayerMask(EEPROM.read(layerSettingsAddress(storedLayerCount)));
+
+  if (migratingLegacyLayers) {
+    saveKeymapToStorage();
+  }
 
   return true;
 }

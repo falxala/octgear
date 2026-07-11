@@ -4,6 +4,7 @@ import {
   createConsumerAssignment,
   createKeyboardAssignment,
   createLayerCycleAssignment,
+  createLayerPreviousAssignment,
   createMomentaryLayerAssignment,
   normalizeAssignment,
 } from "../keymap/keymapTypes";
@@ -231,6 +232,8 @@ function encodeAssignmentKind(kind: KeyAssignment["kind"]) {
       return 2;
     case "layerCycle":
       return 3;
+    case "layerPrevious":
+      return 5;
     case "momentaryLayer":
       return 4;
     case "none":
@@ -260,6 +263,10 @@ function decodeAssignmentPayload(payload: Uint8Array): KeyAssignment {
 
   if (kind === 4) {
     return createMomentaryLayerAssignment(targetLayer);
+  }
+
+  if (kind === 5) {
+    return createLayerPreviousAssignment();
   }
 
   return createBlankAssignment();

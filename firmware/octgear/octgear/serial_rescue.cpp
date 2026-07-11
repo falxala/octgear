@@ -132,7 +132,9 @@ void printHelp() {
   Serial.println(F("  help"));
   Serial.println(F("  state"));
   Serial.println(F("  dump"));
-  Serial.println(F("  layer <0-5>"));
+  Serial.print(F("  layer <0-"));
+  Serial.print(Config::LAYER_COUNT - 1);
+  Serial.println(F(">"));
   Serial.print(F("  get <layer> <key 1-"));
   Serial.print(Config::KEY_COUNT);
   Serial.println(F(">"));
@@ -148,12 +150,15 @@ void printHelp() {
   Serial.print(F("  cycle <layer> <key 1-"));
   Serial.print(Config::KEY_COUNT);
   Serial.println(F(">"));
+  Serial.print(F("  back <layer> <key 1-"));
+  Serial.print(Config::KEY_COUNT);
+  Serial.println(F(">"));
   Serial.print(F("  hold <layer> <key 1-"));
   Serial.print(Config::KEY_COUNT);
   Serial.println(F("> <target layer>"));
   Serial.println(F("  diag"));
   Serial.println(F("  bootloader"));
-  Serial.println(F("Numbers accept decimal or 0xHEX. key/none/consumer/cycle/hold save immediately."));
+  Serial.println(F("Numbers accept decimal or 0xHEX. key/none/consumer/cycle/back/hold save immediately."));
 }
 
 void handleState() {
@@ -278,6 +283,17 @@ void handleCycle(char*& cursor) {
   saveParsedAssignment(layer, keyIndex, layerCycleAssignment());
 }
 
+void handleBack(char*& cursor) {
+  uint8_t layer = 0;
+  uint8_t keyIndex = 0;
+  if (!parseLayerKey(cursor, layer, keyIndex)) {
+    Serial.println(F("ERR back"));
+    return;
+  }
+
+  saveParsedAssignment(layer, keyIndex, layerPreviousAssignment());
+}
+
 void handleHold(char*& cursor) {
   uint8_t layer = 0;
   uint8_t keyIndex = 0;
@@ -332,6 +348,8 @@ void handleCommand(char* line) {
     handleConsumer(cursor);
   } else if (strcmp(command, "cycle") == 0) {
     handleCycle(cursor);
+  } else if (strcmp(command, "back") == 0) {
+    handleBack(cursor);
   } else if (strcmp(command, "hold") == 0) {
     handleHold(cursor);
   } else if (strcmp(command, "diag") == 0) {

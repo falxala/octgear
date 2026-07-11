@@ -40,6 +40,16 @@ KeyAssignment layerCycleAssignment() {
   };
 }
 
+KeyAssignment layerPreviousAssignment() {
+  return {
+    AssignmentKind::LayerPrevious,
+    0,
+    { 0, 0, 0, 0, 0, 0 },
+    0,
+    0,
+  };
+}
+
 KeyAssignment momentaryLayerAssignment(uint8_t layer) {
   return {
     AssignmentKind::MomentaryLayer,

@@ -1,7 +1,13 @@
 import { t } from "../../shared/i18n";
 import { HARDWARE_CONFIG } from "../hardware/hardwareConfig";
 
-export type KeyAssignmentKind = "none" | "keyboard" | "consumer" | "layerCycle" | "momentaryLayer";
+export type KeyAssignmentKind =
+  | "none"
+  | "keyboard"
+  | "consumer"
+  | "layerCycle"
+  | "layerPrevious"
+  | "momentaryLayer";
 
 export type KeyAssignment = {
   kind: KeyAssignmentKind;
@@ -34,6 +40,10 @@ export function createConsumerAssignment(usage: number): KeyAssignment {
 
 export function createLayerCycleAssignment(): KeyAssignment {
   return normalizeAssignment({ kind: "layerCycle" });
+}
+
+export function createLayerPreviousAssignment(): KeyAssignment {
+  return normalizeAssignment({ kind: "layerPrevious" });
 }
 
 export function createMomentaryLayerAssignment(layer: number): KeyAssignment {
@@ -77,6 +87,17 @@ export function normalizeAssignment(
       targetLayer: 0,
       keycodes: createEmptyKeycodes(),
       label: t.assignment.layerCycleLabel,
+    };
+  }
+
+  if (kind === "layerPrevious") {
+    return {
+      kind,
+      modifier: 0,
+      usage: 0,
+      targetLayer: 0,
+      keycodes: createEmptyKeycodes(),
+      label: t.assignment.layerPreviousLabel,
     };
   }
 

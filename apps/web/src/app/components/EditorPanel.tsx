@@ -35,9 +35,11 @@ export function EditorPanel({
   const usageLabel = usesTargetLayer ? t.assignment.targetLayer : t.assignment.usage;
   const valueLabel = usesTargetLayer ? t.assignment.targetLayer : t.assignment.usageHex;
   const assignmentValue = usesTargetLayer ? draftAssignment.targetLayer : draftAssignment.usage;
-  const valueDisabled = draftAssignment.kind === "none" || draftAssignment.kind === "layerCycle";
+  const layerNavigation =
+    draftAssignment.kind === "layerCycle" || draftAssignment.kind === "layerPrevious";
+  const valueDisabled = draftAssignment.kind === "none" || layerNavigation;
   let summaryValue = formatHex(draftAssignment.usage, draftAssignment.kind === "consumer" ? 4 : 2);
-  if (draftAssignment.kind === "layerCycle") {
+  if (layerNavigation) {
     summaryValue = "-";
   } else if (usesTargetLayer) {
     summaryValue = String(draftAssignment.targetLayer);
@@ -62,6 +64,7 @@ export function EditorPanel({
           <option value="keyboard">{t.assignment.keyboard}</option>
           <option value="consumer">{t.assignment.consumer}</option>
           <option value="layerCycle">{t.assignment.layerCycle}</option>
+          <option value="layerPrevious">{t.assignment.layerPrevious}</option>
           <option value="momentaryLayer">{t.assignment.momentaryLayer}</option>
         </select>
       </label>

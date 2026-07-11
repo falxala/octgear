@@ -24,6 +24,7 @@ type KeyboardPickerPanelProps = {
   onPickerOption: (option: KeyPickerOption) => void;
   onConsumerOption: (option: ConsumerKeyOption) => void;
   onLayerCycleOption: () => void;
+  onLayerPreviousOption: () => void;
   onMomentaryLayerOption: (layer: number) => void;
 };
 
@@ -34,6 +35,7 @@ export function KeyboardPickerPanel({
   onPickerOption,
   onConsumerOption,
   onLayerCycleOption,
+  onLayerPreviousOption,
   onMomentaryLayerOption,
 }: KeyboardPickerPanelProps) {
   const systemRows = navigationRows.slice(0, 1);
@@ -143,6 +145,13 @@ export function KeyboardPickerPanel({
             onClick={onLayerCycleOption}
           >
             <KeycapSvg label={t.assignment.layerCycleLabel} units={2.16} />
+          </button>
+          <button
+            type="button"
+            className={draftAssignment.kind === "layerPrevious" ? "picker-key active" : "picker-key"}
+            onClick={onLayerPreviousOption}
+          >
+            <KeycapSvg label={t.assignment.layerPreviousLabel} units={2.16} />
           </button>
           {Array.from({ length: HARDWARE_CONFIG.layerCount }, (_, layer) => (
             <button

@@ -18,7 +18,7 @@ export function createInitialKeymap(): DeviceKeymap {
     createConsumerAssignment(0x00e9),
     createConsumerAssignment(0x00ea),
     createConsumerAssignment(0x00e2),
-    createMomentaryLayerAssignment(2),
+    createMomentaryLayerAssignment(1),
     createConsumerAssignment(0x00b6),
     createConsumerAssignment(0x00cd),
     createConsumerAssignment(0x00b5),

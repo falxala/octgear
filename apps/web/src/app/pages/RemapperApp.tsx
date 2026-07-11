@@ -11,7 +11,7 @@ import {
   createModifierSlotsFromMask,
 } from "../remapper/modifierSlots";
 import {
-  applyLayerCycleOverrides,
+  applyLayerNavigationOverrides,
   collectChangedAssignments,
   createBlankKeymap,
   expandKeymap,
@@ -47,6 +47,7 @@ import {
   createConsumerAssignment,
   createKeyboardAssignment,
   createLayerCycleAssignment,
+  createLayerPreviousAssignment,
   createMomentaryLayerAssignment,
   normalizeAssignment,
   type KeyAssignment,
@@ -127,7 +128,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
       setDeviceState(state);
       setReadKeymap(uiKeymap);
-      setWriteKeymap(applyLayerCycleOverrides(uiKeymap));
+      setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
       setReadEnabledLayers(state.enabledLayers);
       setWriteEnabledLayers(state.enabledLayers);
       setActiveLayer(state.activeLayer);
@@ -168,7 +169,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
       setDeviceState(state);
       setReadKeymap(uiKeymap);
-      setWriteKeymap(applyLayerCycleOverrides(uiKeymap));
+      setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
       setReadEnabledLayers(state.enabledLayers);
       setWriteEnabledLayers(state.enabledLayers);
       setStatus(t.keymap.readComplete);
@@ -340,6 +341,10 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
     updateSelectedAssignment(() => createLayerCycleAssignment());
   }
 
+  function applyLayerPreviousOption() {
+    updateSelectedAssignment(() => createLayerPreviousAssignment());
+  }
+
   function applyMomentaryLayerOption(layer: number) {
     updateSelectedAssignment(() => createMomentaryLayerAssignment(layer));
   }
@@ -347,7 +352,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   function updateSelectedAssignment(updater: (current: KeyAssignment) => KeyAssignment) {
     setDraftAssignment((current) => {
       const next = normalizeAssignment(updater(current));
-      const updateAcrossLayers = current.kind === "layerCycle" || next.kind === "layerCycle";
+      const updateAcrossLayers =
+        current.kind === "layerCycle" ||
+        current.kind === "layerPrevious" ||
+        next.kind === "layerCycle" ||
+        next.kind === "layerPrevious";
       setWriteKeymap((currentKeymap) =>
         updateAcrossLayers
           ? updateKeymapKeyAcrossLayers(currentKeymap, selectedKey, next)
@@ -427,6 +436,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
           onPickerOption={applyPickerOption}
           onConsumerOption={applyConsumerOption}
           onLayerCycleOption={applyLayerCycleOption}
+          onLayerPreviousOption={applyLayerPreviousOption}
           onMomentaryLayerOption={applyMomentaryLayerOption}
         />
       </section>
@@ -478,5 +488,8 @@ function createInitialKeymap() {
 }
 
 function createInitialEnabledLayers() {
-  return Array.from({ length: HARDWARE_CONFIG.layerCount }, () => true);
+  return Array.from(
+    { length: HARDWARE_CONFIG.layerCount },
+    (_, layer) => HARDWARE_CONFIG.defaultEnabledLayers.includes(layer),
+  );
 }

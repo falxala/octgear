@@ -43,6 +43,8 @@ constexpr StatusLedColor STATUS_LAYER_COLORS[LAYER_COUNT] = {
   { 0, 255, 80 },
   { 255, 160, 0 },
   { 180, 0, 255 },
+  { 0, 255, 220 },
+  { 255, 70, 140 },
 };
 
 constexpr uint16_t DEBOUNCE_US = 5000;

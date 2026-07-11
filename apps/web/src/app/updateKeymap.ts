@@ -32,24 +32,27 @@ export function updateKeymapKeyAcrossLayers(
   );
 }
 
-export function applyLayerCycleOverrides(keymap: KeyAssignment[][]) {
-  const layerCycleAssignments = new Map<number, KeyAssignment>();
+export function applyLayerNavigationOverrides(keymap: KeyAssignment[][]) {
+  const layerNavigationAssignments = new Map<number, KeyAssignment>();
 
   keymap.forEach((layerAssignments) => {
     layerAssignments.forEach((assignment, keyIndex) => {
-      if (assignment.kind === "layerCycle" && !layerCycleAssignments.has(keyIndex)) {
-        layerCycleAssignments.set(keyIndex, assignment);
+      if (
+        (assignment.kind === "layerCycle" || assignment.kind === "layerPrevious") &&
+        !layerNavigationAssignments.has(keyIndex)
+      ) {
+        layerNavigationAssignments.set(keyIndex, assignment);
       }
     });
   });
 
-  if (layerCycleAssignments.size === 0) {
+  if (layerNavigationAssignments.size === 0) {
     return keymap;
   }
 
   return keymap.map((layerAssignments) =>
     layerAssignments.map((assignment, keyIndex) =>
-      layerCycleAssignments.get(keyIndex) ?? assignment,
+      layerNavigationAssignments.get(keyIndex) ?? assignment,
     ),
   );
 }

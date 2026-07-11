@@ -8,7 +8,7 @@ namespace {
 uint8_t currentLayer = 0;
 static_assert(Config::LAYER_COUNT > 0 && Config::LAYER_COUNT <= 8, "Layer mask supports 1-8 layers");
 constexpr uint8_t ALL_LAYERS_ENABLED_MASK = static_cast<uint8_t>((1U << Config::LAYER_COUNT) - 1U);
-uint8_t currentEnabledLayerMask = ALL_LAYERS_ENABLED_MASK;
+uint8_t currentEnabledLayerMask = Config::DEFAULT_ENABLED_LAYER_MASK;
 KeyAssignment keymap[Config::LAYER_COUNT][Config::KEY_COUNT];
 
 void setDefaultLayer0() {
@@ -16,7 +16,7 @@ void setDefaultLayer0() {
   keymap[0][1] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_INCREMENT);
   keymap[0][2] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_DECREMENT);
   keymap[0][3] = consumerAssignment(HID_USAGE_CONSUMER_MUTE);
-  keymap[0][4] = momentaryLayerAssignment(2);
+  keymap[0][4] = momentaryLayerAssignment(1);
   keymap[0][5] = consumerAssignment(HID_USAGE_CONSUMER_SCAN_PREVIOUS_TRACK);
   keymap[0][6] = consumerAssignment(HID_USAGE_CONSUMER_PLAY_PAUSE);
   keymap[0][7] = consumerAssignment(HID_USAGE_CONSUMER_SCAN_NEXT_TRACK);
@@ -111,7 +111,8 @@ bool setLayerEnabled(uint8_t layer, bool enabled) {
 }
 
 void setEnabledLayerMask(uint8_t mask) {
-  currentEnabledLayerMask = static_cast<uint8_t>((mask & ALL_LAYERS_ENABLED_MASK) | 0x01U);
+  const uint8_t normalizedMask = mask == 0xFF ? Config::DEFAULT_ENABLED_LAYER_MASK : mask;
+  currentEnabledLayerMask = static_cast<uint8_t>((normalizedMask & ALL_LAYERS_ENABLED_MASK) | 0x01U);
   if (!layerEnabled(currentLayer)) {
     currentLayer = 0;
   }

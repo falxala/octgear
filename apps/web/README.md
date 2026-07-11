@@ -56,7 +56,7 @@ Remapperは2つのkeymapを保持します。
 - `readKeymap`: 最後にdeviceから正常に読んだ内容
 - `writeKeymap`: UIで編集中の内容
 
-Layerの有効状態も読込済みと編集中で分けて保持します。Layer 0は常時有効で、Layer 1-5はcheckboxから変更できます。
+Layerの有効状態も読込済みと編集中で分けて保持します。Layer 0は常時有効で、Layer 1-7はcheckboxから変更できます。初期状態ではLayer 0と1だけが有効です。
 
 Save時はdeviceが返したlayer / key countへnormalizeし、assignmentとlayer設定の差分だけを逐次保存します。Readは全keymapとlayer設定を再取得し、編集中内容を置き換えます。Physical `KeyEvent`のpressは対応するlayer / controlを選択します。
 

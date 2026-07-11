@@ -19,6 +19,10 @@ const keyCount = physicalKeyCount + encoderControlCount;
 const keyPins = profile.keys.map((key) => key.gpio);
 const virtualGroundPins = profile.virtualGrounds.map((rail) => rail.gpio);
 const encoderControlById = Object.fromEntries(profile.encoder.controls.map((control) => [control.id, control]));
+const defaultEnabledLayerMask = profile.defaultEnabledLayers.reduce(
+  (mask, layer) => mask | (1 << layer),
+  0,
+);
 
 writeFileSync(firmwareOut, firmwareHeader(), "utf8");
 writeFileSync(webOut, webConfig(), "utf8");
@@ -26,9 +30,28 @@ writeFileSync(pinoutOut, pinoutMarkdown(), "utf8");
 
 function validateProfile(value) {
   requireInteger(value.layerCount, "layerCount");
+  if (value.layerCount < 1 || value.layerCount > 8) {
+    throw new Error("layerCount must be within 1-8 for the layer mask");
+  }
+  requireArray(value.defaultEnabledLayers, "defaultEnabledLayers");
   requireArray(value.keys, "keys");
   requireArray(value.virtualGrounds, "virtualGrounds");
   requireObject(value.encoder, "encoder");
+
+  const enabledLayerSet = new Set();
+  value.defaultEnabledLayers.forEach((layer, index) => {
+    requireInteger(layer, `defaultEnabledLayers[${index}]`);
+    if (layer < 0 || layer >= value.layerCount) {
+      throw new Error(`defaultEnabledLayers[${index}] must be within the layer range`);
+    }
+    if (enabledLayerSet.has(layer)) {
+      throw new Error(`defaultEnabledLayers[${index}] must be unique`);
+    }
+    enabledLayerSet.add(layer);
+  });
+  if (!enabledLayerSet.has(0)) {
+    throw new Error("defaultEnabledLayers must include Layer 0");
+  }
 
   value.keys.forEach((key, index) => {
     requireInteger(key.firmwareIndex, `keys[${index}].firmwareIndex`);
@@ -78,6 +101,7 @@ constexpr uint8_t PHYSICAL_KEY_COUNT = ${physicalKeyCount};
 constexpr uint8_t ENCODER_CONTROL_COUNT = ${encoderControlCount};
 constexpr uint8_t KEY_COUNT = PHYSICAL_KEY_COUNT + ENCODER_CONTROL_COUNT;
 constexpr uint8_t LAYER_COUNT = ${profile.layerCount};
+constexpr uint8_t DEFAULT_ENABLED_LAYER_MASK = ${hexByte(defaultEnabledLayerMask)};
 constexpr uint8_t VIRTUAL_GROUND_COUNT = ${profile.virtualGrounds.length};
 
 using KeyMask = uint16_t;
@@ -126,6 +150,7 @@ export const HARDWARE_CONFIG = {
   physicalKeyCount: keyControls.length,
   keyCount: keyControls.length + encoderControls.length,
   layerCount: ${profile.layerCount},
+  defaultEnabledLayers: ${json(profile.defaultEnabledLayers)} as readonly number[],
   virtualGroundCount: ${profile.virtualGrounds.length},
   externalRgbLed: ${profile.externalRgbLed ? "true" : "false"},
   oled: ${profile.oled ? "true" : "false"},
@@ -215,4 +240,8 @@ function requireInteger(value, name) {
 
 function json(value) {
   return JSON.stringify(value);
+}
+
+function hexByte(value) {
+  return `0x${value.toString(16).toUpperCase().padStart(2, "0")}`;
 }

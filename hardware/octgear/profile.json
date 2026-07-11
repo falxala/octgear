@@ -1,6 +1,7 @@
 {
   "productName": "OctGear",
-  "layerCount": 6,
+  "layerCount": 8,
+  "defaultEnabledLayers": [0, 1],
   "externalRgbLed": false,
   "oled": false,
   "keys": [
