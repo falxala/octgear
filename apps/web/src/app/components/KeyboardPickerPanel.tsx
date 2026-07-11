@@ -202,20 +202,22 @@ export function KeyboardPickerPanel({
             ))}
           </div>
 
-          <div className="keyboard-cluster system-cluster">
-            {systemRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="picker-row compact">
-                {row.map((option, optionIndex) => renderPickerOption(option, `sys-${rowIndex}-${optionIndex}`))}
-              </div>
-            ))}
-          </div>
+          <div className="keyboard-section navigation-section">
+            <div className="keyboard-cluster system-cluster">
+              {systemRows.map((row, rowIndex) => (
+                <div key={rowIndex} className="picker-row compact">
+                  {row.map((option, optionIndex) => renderPickerOption(option, `sys-${rowIndex}-${optionIndex}`))}
+                </div>
+              ))}
+            </div>
 
-          <div className="keyboard-cluster navigation-cluster">
-            {navigationBodyRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="picker-row compact">
-                {row.map((option, optionIndex) => renderPickerOption(option, `nav-${rowIndex}-${optionIndex}`))}
-              </div>
-            ))}
+            <div className="keyboard-cluster navigation-cluster">
+              {navigationBodyRows.map((row, rowIndex) => (
+                <div key={rowIndex} className="picker-row compact">
+                  {row.map((option, optionIndex) => renderPickerOption(option, `nav-${rowIndex}-${optionIndex}`))}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="keyboard-cluster numpad-cluster">

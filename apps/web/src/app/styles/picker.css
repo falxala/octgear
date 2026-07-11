@@ -38,14 +38,7 @@
   display: grid;
   gap: 14px;
   grid-template-columns: max-content max-content max-content;
-  grid-template-rows: auto auto;
-  padding: 16px;
-  border: 1px solid rgba(78, 61, 38, 0.18);
-  border-radius: 8px;
-  background: rgba(222, 207, 189, 0.98);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.46),
-    inset 0 -1px 0 rgba(120, 91, 54, 0.18);
+  align-items: stretch;
   overflow: visible;
 }
 
@@ -57,27 +50,29 @@
 
 .keyboard-main {
   align-self: start;
-  grid-column: 1;
-  grid-row: 1 / span 2;
 }
 
-.system-cluster {
-  align-self: start;
-  grid-column: 2;
-  grid-row: 1;
+.keyboard-section,
+.keyboard-main,
+.numpad-cluster {
+  padding: 16px;
+  border: 1px solid rgba(78, 61, 38, 0.18);
+  border-radius: 8px;
+  background: rgba(222, 207, 189, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    inset 0 -1px 0 rgba(120, 91, 54, 0.18);
 }
 
-.navigation-cluster {
-  align-self: end;
-  grid-column: 2;
-  grid-row: 2;
+.navigation-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .numpad-cluster {
-  align-self: start;
-  grid-column: 3;
-  grid-row: 1 / span 2;
-  margin-top: calc(var(--key-unit) + 8px);
+  padding-top: calc(16px + var(--key-unit) + 8px);
 }
 
 .picker-row {
