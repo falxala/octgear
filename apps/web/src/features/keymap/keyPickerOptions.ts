@@ -60,25 +60,27 @@ export type ConsumerKeyOption = {
     | "brightness-up";
 };
 
-export const keyboardRows: KeyPickerOption[][] = [
-  [
-    key(41, "Esc"),
-    gap(0.5),
-    key(58, "F1"),
-    key(59, "F2"),
-    key(60, "F3"),
-    key(61, "F4"),
-    gap(0.5),
-    key(62, "F5"),
-    key(63, "F6"),
-    key(64, "F7"),
-    key(65, "F8"),
-    gap(0.5),
-    key(66, "F9"),
-    key(67, "F10"),
-    key(68, "F11"),
-    key(69, "F12"),
-  ],
+const functionRow: KeyPickerOption[] = [
+  key(41, "Esc"),
+  gap(0.5),
+  key(58, "F1"),
+  key(59, "F2"),
+  key(60, "F3"),
+  key(61, "F4"),
+  gap(0.5),
+  key(62, "F5"),
+  key(63, "F6"),
+  key(64, "F7"),
+  key(65, "F8"),
+  gap(0.5),
+  key(66, "F9"),
+  key(67, "F10"),
+  key(68, "F11"),
+  key(69, "F12"),
+];
+
+const jisKeyboardRows: KeyPickerOption[][] = [
+  functionRow,
   [
     key(53, "E/J", { jisLabel: "E/J", usLabel: "~", accent: true }),
     key(30, "1!"),
@@ -156,6 +158,85 @@ export const keyboardRows: KeyPickerOption[][] = [
     mod(0x10, "Ctrl", 1.25),
   ],
 ];
+
+const usKeyboardRows: KeyPickerOption[][] = [
+  functionRow,
+  [
+    key(53, "`~", { accent: true }),
+    key(30, "1!"),
+    key(31, "2@", { accent: true }),
+    key(32, "3#"),
+    key(33, "4$"),
+    key(34, "5%"),
+    key(35, "6^", { accent: true }),
+    key(36, "7&", { accent: true }),
+    key(37, "8*", { accent: true }),
+    key(38, "9(", { accent: true }),
+    key(39, "0)", { accent: true }),
+    key(45, "-_", { accent: true }),
+    key(46, "=+", { accent: true }),
+    key(42, "←", { width: 2, accent: true }),
+  ],
+  [
+    key(43, "Tab", { width: 1.5 }),
+    key(20, "Q"),
+    key(26, "W"),
+    key(8, "E"),
+    key(21, "R"),
+    key(23, "T"),
+    key(28, "Y"),
+    key(24, "U"),
+    key(12, "I"),
+    key(18, "O"),
+    key(19, "P"),
+    key(47, "[{", { accent: true }),
+    key(48, "]}", { accent: true }),
+    key(49, "\\|", { width: 1.5, accent: true }),
+  ],
+  [
+    key(57, "Caps", { width: 1.75 }),
+    key(4, "A"),
+    key(22, "S"),
+    key(7, "D"),
+    key(9, "F"),
+    key(10, "G"),
+    key(11, "H"),
+    key(13, "J"),
+    key(14, "K"),
+    key(15, "L"),
+    key(51, ";:", { accent: true }),
+    key(52, "'\"", { accent: true }),
+    key(40, "Enter", { width: 2.25, accent: true }),
+  ],
+  [
+    mod(0x02, "Shift", 2.25),
+    key(29, "Z"),
+    key(27, "X"),
+    key(6, "C"),
+    key(25, "V"),
+    key(5, "B"),
+    key(17, "N"),
+    key(16, "M"),
+    key(54, ",<", { accent: true }),
+    key(55, ".>", { accent: true }),
+    key(56, "/?"),
+    mod(0x20, "Shift", 2.75, true),
+  ],
+  [
+    mod(0x01, "Ctrl", 1.25),
+    mod(0x08, "Meta", 1.25),
+    mod(0x04, "Alt", 1.25),
+    key(44, "Space", { width: 6.25, accent: true }),
+    mod(0x40, "Alt", 1.25, true),
+    mod(0x80, "Meta", 1.25, true),
+    key(101, "Menu", { width: 1.25 }),
+    mod(0x10, "Ctrl", 1.25),
+  ],
+];
+
+export function keyboardRowsForLayout(layout: KeyboardLayoutMode) {
+  return layout === "jis" ? jisKeyboardRows : usKeyboardRows;
+}
 
 export const navigationRows: KeyPickerOption[][] = [
   [key(70, "PrtSc"), key(71, "ScrLk"), key(72, "Pause")],

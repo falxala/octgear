@@ -236,6 +236,7 @@ const keyboardLabels: Record<number, string> = {
   0x2e: "^",
   0x2f: "@",
   0x30: "[",
+  0x31: "\\",
   0x32: "]",
   0x33: ";",
   0x34: ":",

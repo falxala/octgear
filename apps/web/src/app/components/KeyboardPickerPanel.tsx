@@ -6,7 +6,7 @@ import { HARDWARE_CONFIG } from "../../features/hardware/hardwareConfig";
 import {
   blankOption,
   consumerOptions,
-  keyboardRows,
+  keyboardRowsForLayout,
   keyOptionLabel,
   navigationRows,
   numpadRows,
@@ -40,6 +40,7 @@ export function KeyboardPickerPanel({
 }: KeyboardPickerPanelProps) {
   const systemRows = navigationRows.slice(0, 1);
   const navigationBodyRows = navigationRows.slice(1);
+  const keyboardRows = keyboardRowsForLayout(keyboardLayout);
 
   function pickerOptionClassName(option: KeyPickerOption) {
     if (option.kind === "spacer") {

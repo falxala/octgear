@@ -93,7 +93,10 @@
 .picker-key,
 .picker-spacer,
 .picker-decor {
-  flex: 0 0 calc(var(--key-units, 1) * var(--key-unit));
+  flex: 0 0 calc(
+    (var(--key-units, 1) * var(--key-unit)) +
+    ((var(--key-units, 1) - 1) * var(--key-gap))
+  );
   min-width: 0;
 }
 
@@ -180,7 +183,7 @@
 }
 
 .keycap-svg-jis-enter {
-  width: calc(var(--key-unit) * 1.75);
+  width: calc((var(--key-unit) * 1.75) + (var(--key-gap) * 0.75));
   height: calc((var(--key-unit) * 2) + var(--key-gap));
 }
 
