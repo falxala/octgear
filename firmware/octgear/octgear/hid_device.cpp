@@ -9,6 +9,7 @@
 #include "keymap.h"
 #include "keymap_storage.h"
 #include "readme_drive.h"
+#include "status_led.h"
 
 bool remapperConnected();
 
@@ -94,6 +95,7 @@ void handleSetLayer(const uint8_t* buffer, uint16_t size) {
   }
 
   setActiveLayer(layer);
+  clearStatusLedPreview();
   sendConfigResponse(ConfigCommand::SetLayer, ConfigStatus::Ok, &layer, 1);
 }
 
@@ -165,8 +167,32 @@ void handleSetLayerColor(const uint8_t* buffer, uint16_t size) {
     return;
   }
 
+  clearStatusLedPreview();
   const uint8_t payload[] = { layer, color.red, color.green, color.blue };
   sendConfigResponse(ConfigCommand::SetLayerColor, ConfigStatus::Ok, payload, sizeof(payload));
+}
+
+void handlePreviewLayerColor(const uint8_t* buffer, uint16_t size) {
+  if (size == 1) {
+    clearStatusLedPreview();
+    sendConfigResponse(ConfigCommand::PreviewLayerColor, ConfigStatus::Ok, nullptr, 0);
+    return;
+  }
+
+  if (size < 5) {
+    sendConfigResponse(ConfigCommand::PreviewLayerColor, ConfigStatus::InvalidLength, nullptr, 0);
+    return;
+  }
+
+  const uint8_t layer = buffer[1];
+  if (layer >= Config::LAYER_COUNT) {
+    sendConfigResponse(ConfigCommand::PreviewLayerColor, ConfigStatus::OutOfRange, nullptr, 0);
+    return;
+  }
+
+  previewStatusLedColor(buffer[2], buffer[3], buffer[4]);
+  const uint8_t payload[] = { layer, buffer[2], buffer[3], buffer[4] };
+  sendConfigResponse(ConfigCommand::PreviewLayerColor, ConfigStatus::Ok, payload, sizeof(payload));
 }
 
 void handleGetKey(const uint8_t* buffer, uint16_t size) {
@@ -349,6 +375,9 @@ void setReportCallback(uint8_t reportId, hid_report_type_t reportType, uint8_t c
       break;
     case ConfigCommand::SetLayerColor:
       handleSetLayerColor(buffer, size);
+      break;
+    case ConfigCommand::PreviewLayerColor:
+      handlePreviewLayerColor(buffer, size);
       break;
     default:
       sendConfigResponse(command, ConfigStatus::UnknownCommand, nullptr, 0);

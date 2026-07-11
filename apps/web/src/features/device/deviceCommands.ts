@@ -135,6 +135,25 @@ export async function setDeviceLayerColor(
   assertConfigOk(response);
 }
 
+export async function previewDeviceLayerColor(
+  transport: WebHidTransport,
+  layer: number,
+  color: LayerColor,
+) {
+  const response = await sendCommand(transport, ConfigCommand.PreviewLayerColor, [
+    layer,
+    clampColorChannel(color.red),
+    clampColorChannel(color.green),
+    clampColorChannel(color.blue),
+  ]);
+  assertConfigOk(response);
+}
+
+export async function clearDeviceLayerColorPreview(transport: WebHidTransport) {
+  const response = await sendCommand(transport, ConfigCommand.PreviewLayerColor);
+  assertConfigOk(response);
+}
+
 export async function getDeviceKey(transport: WebHidTransport, layer: number, keyIndex: number) {
   const response = await sendCommand(transport, ConfigCommand.GetKey, [layer, keyIndex]);
   assertConfigOk(response);

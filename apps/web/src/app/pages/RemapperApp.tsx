@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorPanel } from "../components/EditorPanel";
 import { FirmwarePanel } from "../components/FirmwarePanel";
 import { HardwarePanel } from "../components/HardwarePanel";
@@ -20,8 +20,10 @@ import {
   updateKeymapKeyAcrossLayers,
 } from "../updateKeymap";
 import {
+  clearDeviceLayerColorPreview,
   enterDeviceBootloader,
   getDeviceState,
+  previewDeviceLayerColor,
   readDeviceKeymap,
   readDeviceLayerColors,
   sendRemapperHeartbeat,
@@ -58,6 +60,8 @@ import {
 } from "../../features/keymap/keymapTypes";
 import { t } from "../../shared/i18n";
 
+const LAYER_COLOR_PREVIEW_DEBOUNCE_MS = 60;
+
 type RemapperAppProps = {
   homeHref?: string;
 };
@@ -76,6 +80,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   const [writeEnabledLayers, setWriteEnabledLayers] = useState(createInitialEnabledLayers);
   const [readLayerColors, setReadLayerColors] = useState(createInitialLayerColors);
   const [writeLayerColors, setWriteLayerColors] = useState(createInitialLayerColors);
+  const colorPreviewTimerRef = useRef<number | null>(null);
+  const colorPreviewQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayoutMode>("jis");
   const selectedAssignment = writeKeymap[activeLayer]?.[selectedKey] ?? normalizeAssignment({ kind: "none" });
   const [draftAssignment, setDraftAssignment] = useState<KeyAssignment>(selectedAssignment);
@@ -95,6 +101,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       createModifierSlotsFromMask(selectedAssignment.kind === "keyboard" ? selectedAssignment.modifier : 0),
     );
   }, [selectedAssignment]);
+
+  useEffect(() => () => cancelScheduledColorPreview(), []);
 
   useEffect(() => {
     if (!connected || deviceLayerCount === 0 || deviceKeyCount === 0) {
@@ -153,12 +161,17 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
 
   async function selectLayer(layerIndex: number) {
     setActiveLayer(layerIndex);
+    cancelScheduledColorPreview();
 
-    if (!transport.connected || !writeEnabledLayers[layerIndex]) {
+    if (!transport.connected) {
       return;
     }
 
     try {
+      await clearLayerColorPreview();
+      if (!writeEnabledLayers[layerIndex]) {
+        return;
+      }
       await setDeviceLayer(transport, layerIndex);
       setDeviceState((current) =>
         current ? { ...current, activeLayer: layerIndex } : current,
@@ -176,6 +189,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
 
     try {
       setStatus(t.keymap.reading);
+      await clearLayerColorPreview();
       const state = await getDeviceState(transport);
       const loadedKeymap = await readDeviceKeymap(transport, state.layerCount, state.keyCount);
       const loadedLayerColors = await readDeviceLayerColors(
@@ -216,12 +230,13 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       .slice(0, deviceState.layerCount)
       .map((color, layer) => ({ layer, color }))
       .filter(({ layer, color }) => !sameLayerColor(readLayerColors[layer], color));
-    if (saveTargets.length === 0 && layerTargets.length === 0 && colorTargets.length === 0) {
-      setStatus(t.keymap.saveSkippedAll);
-      return;
-    }
-
     try {
+      await clearLayerColorPreview();
+      if (saveTargets.length === 0 && layerTargets.length === 0 && colorTargets.length === 0) {
+        setStatus(t.keymap.saveSkippedAll);
+        return;
+      }
+
       setStatus(t.keymap.savingAll);
       let latestDeviceState = deviceState;
       for (const { layer, enabled } of layerTargets) {
@@ -405,9 +420,48 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   }
 
   function updateLayerColor(layer: number, color: LayerColor) {
+    const normalizedColor = normalizeLayerColor(color);
     setWriteLayerColors((current) =>
-      current.map((value, index) => (index === layer ? normalizeLayerColor(color) : value)),
+      current.map((value, index) => (index === layer ? normalizedColor : value)),
     );
+
+    if (!connected || layer >= deviceLayerCount) {
+      return;
+    }
+
+    cancelScheduledColorPreview();
+    colorPreviewTimerRef.current = window.setTimeout(() => {
+      colorPreviewTimerRef.current = null;
+      colorPreviewQueueRef.current = colorPreviewQueueRef.current
+        .catch(() => undefined)
+        .then(() => previewDeviceLayerColor(transport, layer, normalizedColor))
+        .catch((error) => {
+          setStatus(error instanceof Error ? error.message : t.connection.layerChangeFailed);
+        });
+    }, LAYER_COLOR_PREVIEW_DEBOUNCE_MS);
+  }
+
+  function cancelScheduledColorPreview() {
+    if (colorPreviewTimerRef.current !== null) {
+      window.clearTimeout(colorPreviewTimerRef.current);
+      colorPreviewTimerRef.current = null;
+    }
+  }
+
+  async function clearLayerColorPreview() {
+    cancelScheduledColorPreview();
+    const request = colorPreviewQueueRef.current
+      .catch(() => undefined)
+      .then(() => clearDeviceLayerColorPreview(transport));
+    colorPreviewQueueRef.current = request;
+    await request;
+  }
+
+  async function disconnectRemapperDevice() {
+    if (transport.connected) {
+      await clearLayerColorPreview().catch(() => undefined);
+    }
+    await disconnectDevice();
   }
 
   return (
@@ -432,7 +486,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
             <button type="button" className="ghost-button" onClick={() => setFirmwareModalOpen(true)}>
               {t.connection.updater}
             </button>
-            <button type="button" onClick={connected ? disconnectDevice : connectDevice}>
+            <button type="button" onClick={connected ? disconnectRemapperDevice : connectDevice}>
               {connected ? t.connection.disconnect : t.connection.connect}
             </button>
           </div>

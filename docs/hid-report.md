@@ -60,6 +60,7 @@ byte 3..31  response payload
 | `0x0a` | `SetLayerEnabled` | `layer, enabled` | `layer, enabled, activeLayer, enabledLayerMask` |
 | `0x0b` | `GetLayerColor` | `layer` | `layer, red, green, blue` |
 | `0x0c` | `SetLayerColor` | `layer, red, green, blue` | `layer, red, green, blue` |
+| `0x0d` | `PreviewLayerColor` | `layer, red, green, blue` or none | previewed values or none |
 
 通常の同期commandは、requestと同じcommandをbyte 0に持つresponseを1つ返します。`RemapperHeartbeat`と`EnterBootloader`は例外です。Heartbeatは応答を返さず、bootloader commandはdeviceが再起動するためresponseを待ちません。
 
@@ -76,6 +77,8 @@ byte 3..31  response payload
 旧firmwareの`GetState` responseは4 bytesです。Webはmask byteがない場合に全layer有効として扱います。`SetLayerEnabled`自体は新firmwareが必要です。
 
 Layer colorの各channelは`0-255`です。RGBがすべて`0`の場合、通常modeのLayer LEDを消灯します。Webは`GetLayerColor`未対応firmwareではprofileの既定色を表示し、色の書込時にfirmware更新を要求します。
+
+`PreviewLayerColor`はFlashやRAM上のlayer設定を変更せず、Remapper接続中のLED表示だけを一時的に上書きします。Payloadなしのrequest、`SetLayer`、または成功した`SetLayerColor`でpreviewを解除します。Heartbeatが途切れた場合も通常のactive layer表示へ戻ります。
 
 ## Session Lifecycle
 

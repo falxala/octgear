@@ -32,6 +32,7 @@ enum class ConfigCommand : uint8_t {
   SetLayerEnabled = 0x0A,
   GetLayerColor = 0x0B,
   SetLayerColor = 0x0C,
+  PreviewLayerColor = 0x0D,
 };
 
 enum class ConfigStatus : uint8_t {
