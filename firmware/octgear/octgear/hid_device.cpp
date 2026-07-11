@@ -33,14 +33,6 @@ uint32_t momentaryLayerOrder[Config::KEY_COUNT] = { 0 };
 uint32_t nextMomentaryLayerOrder = 1;
 uint8_t momentaryBaseLayer = 0;
 
-uint8_t keyboardReportIdFor(uint8_t keyIndex) {
-  if (keyIndex < Config::PHYSICAL_KEY_COUNT) {
-    return static_cast<uint8_t>(RID_KEYBOARD_1 + keyIndex);
-  }
-
-  return static_cast<uint8_t>(RID_KEYBOARD_9 + (keyIndex - Config::PHYSICAL_KEY_COUNT));
-}
-
 bool sendConfigReportWhenReady(const uint8_t* report, uint8_t length) {
   for (uint8_t attempt = 0; attempt < Config::CONFIG_RESPONSE_READY_RETRIES; attempt++) {
     if (usbHid.ready()) {
@@ -299,6 +291,10 @@ void handleEnterBootloader() {
 }
 
 void handleRemapperHeartbeat() {
+  if (!remapperConnected()) {
+    queueAllKeyboardReleases();
+    queueAllConsumerReleases();
+  }
   lastRemapperHeartbeatMs = millis();
 }
 
@@ -538,7 +534,7 @@ void updateHidDevice() {
   flushWakeKeyChange();
   serviceConsumerReports();
 
-  if (flushKeyboardReports(usbHid)) {
+  if (flushKeyboardReport(usbHid)) {
     return;
   }
 
@@ -574,7 +570,6 @@ void sendKeyChanges(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t la
       continue;
     }
 
-    const uint8_t reportId = keyboardReportIdFor(keyIndex);
     const bool pressed = (newMask & bit) != 0;
     const KeyAssignment& assignment = assignmentFor(layer, keyIndex);
 
@@ -583,25 +578,30 @@ void sendKeyChanges(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t la
     }
 
     if (!pressed) {
+      queueKeyboardRelease(keyIndex);
+      queueConsumerRelease(keyIndex);
       if (releaseMomentaryLayer(keyIndex)) {
         continue;
       }
-
-      queueKeyboardRelease(reportId);
       continue;
     }
 
     if (remapperActive) {
-      queueKeyboardRelease(reportId);
+      queueKeyboardRelease(keyIndex);
+      queueConsumerRelease(keyIndex);
       continue;
     }
 
     switch (assignment.kind) {
       case AssignmentKind::Keyboard:
-        queueKeyboardAssignment(reportId, assignment);
+        queueKeyboardAssignment(keyIndex, assignment);
         break;
       case AssignmentKind::Consumer:
-        queueConsumerTap(assignment.consumerUsage);
+        if (keyIndex == Config::ENCODER_CCW_KEY_INDEX || keyIndex == Config::ENCODER_CW_KEY_INDEX) {
+          queueConsumerTap(assignment.consumerUsage);
+        } else {
+          queueConsumerPress(keyIndex, assignment.consumerUsage);
+        }
         break;
       case AssignmentKind::LayerCycle:
         queueAllKeyboardReleases();
@@ -616,7 +616,8 @@ void sendKeyChanges(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t la
         break;
       case AssignmentKind::None:
       default:
-        queueKeyboardRelease(reportId);
+        queueKeyboardRelease(keyIndex);
+        queueConsumerRelease(keyIndex);
         break;
     }
   }

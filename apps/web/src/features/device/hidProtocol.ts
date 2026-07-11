@@ -1,4 +1,4 @@
-export const CONFIG_REPORT_ID = 10;
+export const CONFIG_REPORT_ID = 3;
 export const CONFIG_REPORT_SIZE = 32;
 
 export enum ConfigCommand {

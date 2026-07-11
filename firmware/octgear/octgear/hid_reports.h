@@ -3,19 +3,9 @@
 #include <Arduino.h>
 
 enum HidReportId : uint8_t {
-  RID_KEYBOARD_1 = 1,
-  RID_KEYBOARD_2,
-  RID_KEYBOARD_3,
-  RID_KEYBOARD_4,
-  RID_KEYBOARD_5,
-  RID_KEYBOARD_6,
-  RID_KEYBOARD_7,
-  RID_KEYBOARD_8,
+  RID_KEYBOARD = 1,
   RID_CONSUMER_CONTROL,
   RID_CONFIG,
-  RID_KEYBOARD_9,
-  RID_KEYBOARD_10,
-  RID_KEYBOARD_11,
 };
 
 enum class ConfigCommand : uint8_t {

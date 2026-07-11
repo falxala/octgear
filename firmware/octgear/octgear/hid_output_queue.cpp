@@ -5,52 +5,123 @@
 
 namespace {
 
-struct KeyboardReportState {
+struct KeyboardHoldState {
   uint8_t modifier;
   uint8_t keycodes[Config::KEYBOARD_REPORT_SLOTS];
-  bool dirty;
+  bool active;
 };
 
-// TinyUSB accepts one HID IN report at a time. Keep reports dirty until accepted
-// so key-release reports are retried instead of being dropped while not ready.
-KeyboardReportState keyboardReports[Config::KEY_COUNT] = {};
-uint8_t nextKeyboardFlushIndex = 0;
-bool consumerReleasePending = false;
-uint32_t consumerReleaseDueUs = 0;
-uint16_t consumerReportValue = 0;
-bool consumerReportDirty = false;
+struct ConsumerHoldState {
+  uint16_t usage;
+  uint32_t order;
+  bool active;
+};
+
+constexpr uint8_t HID_ERROR_ROLLOVER = 0x01;
 constexpr uint8_t CONSUMER_TAP_QUEUE_SIZE = 8;
+constexpr uint32_t CONSUMER_TAP_DURATION_US = 2000;
+
+KeyboardHoldState keyboardHolds[Config::KEY_COUNT] = {};
+uint8_t keyboardReportModifier = 0;
+uint8_t keyboardReportKeycodes[Config::KEYBOARD_REPORT_SLOTS] = {};
+bool keyboardReportDirty = false;
+
+ConsumerHoldState consumerHolds[Config::KEY_COUNT] = {};
+uint32_t nextConsumerHoldOrder = 1;
+uint16_t consumerReportValue = 0;
+uint16_t lastConsumerReportValue = 0;
+bool consumerReportDirty = false;
+bool pendingConsumerReportIsTap = false;
+bool consumerTapActive = false;
+uint32_t consumerTapReleaseDueUs = 0;
 uint16_t consumerTapQueue[CONSUMER_TAP_QUEUE_SIZE] = {};
 uint8_t consumerTapQueueHead = 0;
 uint8_t consumerTapQueueCount = 0;
-
-uint8_t keyboardReportIdFor(uint8_t keyIndex) {
-  if (keyIndex < Config::PHYSICAL_KEY_COUNT) {
-    return static_cast<uint8_t>(RID_KEYBOARD_1 + keyIndex);
-  }
-
-  return static_cast<uint8_t>(RID_KEYBOARD_9 + (keyIndex - Config::PHYSICAL_KEY_COUNT));
-}
 
 bool timeReached(uint32_t nowUs, uint32_t deadlineUs) {
   return static_cast<uint32_t>(nowUs - deadlineUs) < 0x80000000UL;
 }
 
-void queueKeyboardReport(uint8_t reportId, uint8_t modifier, const uint8_t* keycodes) {
-  if (!((reportId >= RID_KEYBOARD_1 && reportId <= RID_KEYBOARD_8) ||
-        (reportId >= RID_KEYBOARD_9 && reportId <= RID_KEYBOARD_11))) {
+bool containsKeycode(const uint8_t* keycodes, uint8_t count, uint8_t keycode) {
+  for (uint8_t index = 0; index < count; index++) {
+    if (keycodes[index] == keycode) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool keyboardReportChanged(uint8_t modifier, const uint8_t* keycodes) {
+  if (keyboardReportModifier != modifier) {
+    return true;
+  }
+
+  for (uint8_t slot = 0; slot < Config::KEYBOARD_REPORT_SLOTS; slot++) {
+    if (keyboardReportKeycodes[slot] != keycodes[slot]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void rebuildKeyboardReport() {
+  uint8_t modifier = 0;
+  uint8_t keycodes[Config::KEYBOARD_REPORT_SLOTS] = {};
+  uint8_t keycodeCount = 0;
+  bool rollover = false;
+
+  for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
+    const KeyboardHoldState& hold = keyboardHolds[keyIndex];
+    if (!hold.active) {
+      continue;
+    }
+
+    modifier |= hold.modifier;
+    for (uint8_t slot = 0; slot < Config::KEYBOARD_REPORT_SLOTS; slot++) {
+      const uint8_t keycode = hold.keycodes[slot];
+      if (keycode == 0 || containsKeycode(keycodes, keycodeCount, keycode)) {
+        continue;
+      }
+      if (keycodeCount >= Config::KEYBOARD_REPORT_SLOTS) {
+        rollover = true;
+        break;
+      }
+      keycodes[keycodeCount++] = keycode;
+    }
+
+    if (rollover) {
+      break;
+    }
+  }
+
+  if (rollover) {
+    for (uint8_t slot = 0; slot < Config::KEYBOARD_REPORT_SLOTS; slot++) {
+      keycodes[slot] = HID_ERROR_ROLLOVER;
+    }
+  }
+
+  if (!keyboardReportChanged(modifier, keycodes)) {
     return;
   }
 
-  const uint8_t reportIndex = reportId <= RID_KEYBOARD_8
-    ? static_cast<uint8_t>(reportId - RID_KEYBOARD_1)
-    : static_cast<uint8_t>(Config::PHYSICAL_KEY_COUNT + (reportId - RID_KEYBOARD_9));
-  KeyboardReportState& report = keyboardReports[reportIndex];
-  report.modifier = modifier;
-  for (uint8_t i = 0; i < Config::KEYBOARD_REPORT_SLOTS; i++) {
-    report.keycodes[i] = keycodes[i];
+  keyboardReportModifier = modifier;
+  for (uint8_t slot = 0; slot < Config::KEYBOARD_REPORT_SLOTS; slot++) {
+    keyboardReportKeycodes[slot] = keycodes[slot];
   }
-  report.dirty = true;
+  keyboardReportDirty = true;
+}
+
+uint16_t latestHeldConsumerUsage() {
+  uint16_t usage = 0;
+  uint32_t latestOrder = 0;
+  for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
+    const ConsumerHoldState& hold = consumerHolds[keyIndex];
+    if (hold.active && hold.order >= latestOrder) {
+      usage = hold.usage;
+      latestOrder = hold.order;
+    }
+  }
+  return usage;
 }
 
 bool enqueueConsumerTap(uint16_t usage) {
@@ -65,35 +136,74 @@ bool enqueueConsumerTap(uint16_t usage) {
 }
 
 uint16_t dequeueConsumerTap() {
-  if (consumerTapQueueCount == 0) {
-    return 0;
-  }
-
   const uint16_t usage = consumerTapQueue[consumerTapQueueHead];
   consumerTapQueueHead = static_cast<uint8_t>((consumerTapQueueHead + 1) % CONSUMER_TAP_QUEUE_SIZE);
   consumerTapQueueCount--;
   return usage;
 }
 
-void queueConsumerReport(uint16_t value) {
+void queueConsumerReport(uint16_t value, bool isTap = false) {
   consumerReportValue = value;
+  pendingConsumerReportIsTap = isTap;
   consumerReportDirty = true;
 }
 
 }  // namespace
 
-void queueKeyboardAssignment(uint8_t reportId, const KeyAssignment& assignment) {
-  queueKeyboardReport(reportId, assignment.modifier, assignment.keycodes);
+void queueKeyboardAssignment(uint8_t keyIndex, const KeyAssignment& assignment) {
+  if (keyIndex >= Config::KEY_COUNT) {
+    return;
+  }
+
+  KeyboardHoldState& hold = keyboardHolds[keyIndex];
+  hold.modifier = assignment.modifier;
+  for (uint8_t slot = 0; slot < Config::KEYBOARD_REPORT_SLOTS; slot++) {
+    hold.keycodes[slot] = assignment.keycodes[slot];
+  }
+  hold.active = true;
+  rebuildKeyboardReport();
 }
 
-void queueKeyboardRelease(uint8_t reportId) {
-  const uint8_t keycodes[Config::KEYBOARD_REPORT_SLOTS] = { 0 };
-  queueKeyboardReport(reportId, 0, keycodes);
+void queueKeyboardRelease(uint8_t keyIndex) {
+  if (keyIndex >= Config::KEY_COUNT || !keyboardHolds[keyIndex].active) {
+    return;
+  }
+
+  keyboardHolds[keyIndex].active = false;
+  rebuildKeyboardReport();
 }
 
 void queueAllKeyboardReleases() {
   for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
-    queueKeyboardRelease(keyboardReportIdFor(keyIndex));
+    keyboardHolds[keyIndex].active = false;
+  }
+  rebuildKeyboardReport();
+}
+
+void queueConsumerPress(uint8_t keyIndex, uint16_t usage) {
+  if (keyIndex >= Config::KEY_COUNT || usage == 0) {
+    return;
+  }
+
+  consumerHolds[keyIndex] = { usage, nextConsumerHoldOrder++, true };
+}
+
+void queueConsumerRelease(uint8_t keyIndex) {
+  if (keyIndex < Config::KEY_COUNT) {
+    consumerHolds[keyIndex].active = false;
+  }
+}
+
+void queueAllConsumerReleases() {
+  for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
+    consumerHolds[keyIndex].active = false;
+  }
+
+  consumerTapQueueHead = 0;
+  consumerTapQueueCount = 0;
+  consumerTapActive = false;
+  if (consumerReportDirty || lastConsumerReportValue != 0) {
+    queueConsumerReport(0);
   }
 }
 
@@ -102,42 +212,44 @@ void queueConsumerTap(uint16_t usage) {
 }
 
 void serviceConsumerReports() {
-  if (consumerReleasePending && !consumerReportDirty && timeReached(micros(), consumerReleaseDueUs)) {
-    queueConsumerReport(0);
+  if (consumerReportDirty) {
     return;
   }
 
-  if (!consumerReleasePending && !consumerReportDirty && consumerTapQueueCount > 0) {
-    queueConsumerReport(dequeueConsumerTap());
+  if (consumerTapActive) {
+    if (timeReached(micros(), consumerTapReleaseDueUs)) {
+      consumerTapActive = false;
+      queueConsumerReport(latestHeldConsumerUsage());
+    }
+    return;
+  }
+
+  if (consumerTapQueueCount > 0) {
+    if (lastConsumerReportValue != 0) {
+      queueConsumerReport(0);
+    } else {
+      queueConsumerReport(dequeueConsumerTap(), true);
+    }
+    return;
+  }
+
+  const uint16_t heldUsage = latestHeldConsumerUsage();
+  if (heldUsage != lastConsumerReportValue) {
+    queueConsumerReport(heldUsage);
   }
 }
 
-bool flushKeyboardReports(Adafruit_USBD_HID& usbHid) {
-  if (!usbHid.ready()) {
+bool flushKeyboardReport(Adafruit_USBD_HID& usbHid) {
+  if (!keyboardReportDirty || !usbHid.ready()) {
     return false;
   }
 
-  for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
-    const uint8_t reportIndex = static_cast<uint8_t>((nextKeyboardFlushIndex + keyIndex) % Config::KEY_COUNT);
-    KeyboardReportState& report = keyboardReports[reportIndex];
-    if (!report.dirty) {
-      continue;
-    }
-
-    uint8_t keycodes[Config::KEYBOARD_REPORT_SLOTS] = { 0 };
-    for (uint8_t i = 0; i < Config::KEYBOARD_REPORT_SLOTS; i++) {
-      keycodes[i] = report.keycodes[i];
-    }
-
-    if (usbHid.keyboardReport(keyboardReportIdFor(reportIndex), report.modifier, keycodes)) {
-      report.dirty = false;
-      nextKeyboardFlushIndex = static_cast<uint8_t>((reportIndex + 1) % Config::KEY_COUNT);
-    }
-
-    return true;
+  if (!usbHid.keyboardReport(RID_KEYBOARD, keyboardReportModifier, keyboardReportKeycodes)) {
+    return false;
   }
 
-  return false;
+  keyboardReportDirty = false;
+  return true;
 }
 
 bool flushConsumerReport(Adafruit_USBD_HID& usbHid) {
@@ -145,18 +257,16 @@ bool flushConsumerReport(Adafruit_USBD_HID& usbHid) {
     return false;
   }
 
-  const uint16_t value = consumerReportValue;
-  if (!usbHid.sendReport16(RID_CONSUMER_CONTROL, value)) {
+  if (!usbHid.sendReport16(RID_CONSUMER_CONTROL, consumerReportValue)) {
     return false;
   }
 
+  lastConsumerReportValue = consumerReportValue;
   consumerReportDirty = false;
-  if (value == 0) {
-    consumerReleasePending = false;
-  } else {
-    consumerReleaseDueUs = micros() + 2000;
-    consumerReleasePending = true;
+  if (pendingConsumerReportIsTap) {
+    consumerTapActive = true;
+    consumerTapReleaseDueUs = micros() + CONSUMER_TAP_DURATION_US;
   }
-
+  pendingConsumerReportIsTap = false;
   return true;
 }
