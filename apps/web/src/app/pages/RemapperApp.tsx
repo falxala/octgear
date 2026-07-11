@@ -25,6 +25,7 @@ import {
   readDeviceKeymap,
   sendRemapperHeartbeat,
   setDeviceLayer,
+  setDeviceLayerEnabled,
   setDeviceKey,
   subscribeDeviceKeyEvents,
   type DeviceState,
@@ -67,6 +68,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   const [deviceState, setDeviceState] = useState<DeviceState | null>(null);
   const [readKeymap, setReadKeymap] = useState(createInitialKeymap);
   const [writeKeymap, setWriteKeymap] = useState(createInitialKeymap);
+  const [readEnabledLayers, setReadEnabledLayers] = useState(createInitialEnabledLayers);
+  const [writeEnabledLayers, setWriteEnabledLayers] = useState(createInitialEnabledLayers);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayoutMode>("jis");
   const selectedAssignment = writeKeymap[activeLayer]?.[selectedKey] ?? normalizeAssignment({ kind: "none" });
   const [draftAssignment, setDraftAssignment] = useState<KeyAssignment>(selectedAssignment);
@@ -125,6 +128,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       setDeviceState(state);
       setReadKeymap(uiKeymap);
       setWriteKeymap(applyLayerCycleOverrides(uiKeymap));
+      setReadEnabledLayers(state.enabledLayers);
+      setWriteEnabledLayers(state.enabledLayers);
       setActiveLayer(state.activeLayer);
       setSelectedKey((current) => (current < state.keyCount ? current : 0));
       setStatus(t.connection.connectedTo(device.productName || t.device.fallbackName));
@@ -136,7 +141,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   async function selectLayer(layerIndex: number) {
     setActiveLayer(layerIndex);
 
-    if (!transport.connected) {
+    if (!transport.connected || !writeEnabledLayers[layerIndex]) {
       return;
     }
 
@@ -158,10 +163,14 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
 
     try {
       setStatus(t.keymap.reading);
-      const loadedKeymap = await readDeviceKeymap(transport, deviceState.layerCount, deviceState.keyCount);
-      const uiKeymap = expandKeymap(loadedKeymap, deviceState.layerCount, HARDWARE_CONFIG.keyCount);
+      const state = await getDeviceState(transport);
+      const loadedKeymap = await readDeviceKeymap(transport, state.layerCount, state.keyCount);
+      const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
+      setDeviceState(state);
       setReadKeymap(uiKeymap);
       setWriteKeymap(applyLayerCycleOverrides(uiKeymap));
+      setReadEnabledLayers(state.enabledLayers);
+      setWriteEnabledLayers(state.enabledLayers);
       setStatus(t.keymap.readComplete);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t.keymap.readFailed);
@@ -180,20 +189,44 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       deviceState.keyCount,
     );
     const saveTargets = collectChangedAssignments(readKeymap, keymapToSave);
-    if (saveTargets.length === 0) {
+    const layerTargets = writeEnabledLayers
+      .map((enabled, layer) => ({ layer, enabled }))
+      .filter(({ layer, enabled }) => layer > 0 && readEnabledLayers[layer] !== enabled);
+    if (saveTargets.length === 0 && layerTargets.length === 0) {
       setStatus(t.keymap.saveSkippedAll);
       return;
     }
 
     try {
       setStatus(t.keymap.savingAll);
+      let latestDeviceState = deviceState;
+      for (const { layer, enabled } of layerTargets) {
+        const result = await setDeviceLayerEnabled(
+          transport,
+          layer,
+          enabled,
+          deviceState.layerCount,
+        );
+        latestDeviceState = {
+          ...latestDeviceState,
+          activeLayer: result.activeLayer,
+          enabledLayers: result.enabledLayers,
+        };
+      }
+
       for (const { layer, keyIndex, assignment } of saveTargets) {
         await setDeviceKey(transport, layer, keyIndex, assignment);
       }
 
+      setDeviceState(latestDeviceState);
       setReadKeymap(keymapToSave);
       setWriteKeymap(keymapToSave);
-      setStatus(t.keymap.savedAll(saveTargets.length, deviceState.layerCount, deviceState.keyCount));
+      setReadEnabledLayers(writeEnabledLayers);
+      setStatus(t.keymap.savedAll(
+        saveTargets.length + layerTargets.length,
+        deviceState.layerCount,
+        deviceState.keyCount,
+      ));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t.keymap.saveFailed);
     }
@@ -324,6 +357,16 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
     });
   }
 
+  function updateLayerEnabled(layer: number, enabled: boolean) {
+    if (layer === 0) {
+      return;
+    }
+
+    setWriteEnabledLayers((current) =>
+      current.map((value, index) => (index === layer ? enabled : value)),
+    );
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -361,10 +404,12 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
           connected={connected}
           supportedKeyCount={connected ? deviceKeyCount : writeKeymap[activeLayer]?.length ?? 0}
           layerCount={writeKeymap.length}
+          enabledLayers={writeEnabledLayers}
           layerAssignments={writeKeymap[activeLayer]}
           onRead={() => void readAllAssignments()}
           onSave={() => void saveAllAssignments()}
           onSelectLayer={(layerIndex) => void selectLayer(layerIndex)}
+          onLayerEnabledChange={updateLayerEnabled}
           onSelectKey={setSelectedKey}
         />
         <EditorPanel
@@ -430,4 +475,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
 
 function createInitialKeymap() {
   return createBlankKeymap(HARDWARE_CONFIG.layerCount, HARDWARE_CONFIG.keyCount);
+}
+
+function createInitialEnabledLayers() {
+  return Array.from({ length: HARDWARE_CONFIG.layerCount }, () => true);
 }

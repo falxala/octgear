@@ -23,6 +23,12 @@ export type DeviceState = {
   layerCount: number;
   keyCount: number;
   virtualGroundCount: number;
+  enabledLayers: boolean[];
+};
+
+export type LayerEnabledResult = {
+  activeLayer: number;
+  enabledLayers: boolean[];
 };
 
 export type DeviceKeyEvent = {
@@ -47,17 +53,39 @@ export async function getDeviceState(transport: WebHidTransport): Promise<Device
   const response = await sendCommand(transport, ConfigCommand.GetState);
   assertConfigOk(response);
 
+  const layerCount = response.payload[1] ?? 0;
+  const enabledLayerMask = response.payload[4] ?? ((1 << layerCount) - 1);
+
   return {
     activeLayer: response.payload[0] ?? 0,
-    layerCount: response.payload[1] ?? 0,
+    layerCount,
     keyCount: response.payload[2] ?? 0,
     virtualGroundCount: response.payload[3] ?? 0,
+    enabledLayers: decodeEnabledLayers(enabledLayerMask, layerCount),
   };
 }
 
 export async function setDeviceLayer(transport: WebHidTransport, layer: number) {
   const response = await sendCommand(transport, ConfigCommand.SetLayer, [layer]);
   assertConfigOk(response);
+}
+
+export async function setDeviceLayerEnabled(
+  transport: WebHidTransport,
+  layer: number,
+  enabled: boolean,
+  layerCount: number,
+): Promise<LayerEnabledResult> {
+  const response = await sendCommand(transport, ConfigCommand.SetLayerEnabled, [layer, enabled ? 1 : 0]);
+  if (response.status === ConfigStatus.UnknownCommand || response.status === ConfigStatus.Unsupported) {
+    throw new Error(t.device.layerEnabledUnsupported);
+  }
+  assertConfigOk(response);
+
+  return {
+    activeLayer: response.payload[2] ?? 0,
+    enabledLayers: decodeEnabledLayers(response.payload[3] ?? 1, layerCount),
+  };
 }
 
 export async function getDeviceKey(transport: WebHidTransport, layer: number, keyIndex: number) {
@@ -235,4 +263,8 @@ function decodeAssignmentPayload(payload: Uint8Array): KeyAssignment {
   }
 
   return createBlankAssignment();
+}
+
+function decodeEnabledLayers(mask: number, layerCount: number) {
+  return Array.from({ length: layerCount }, (_, layer) => (mask & (1 << layer)) !== 0);
 }

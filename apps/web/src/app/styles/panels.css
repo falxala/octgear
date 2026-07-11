@@ -159,6 +159,40 @@
   flex-wrap: wrap;
 }
 
+.layer-tab-item {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-width: 48px;
+}
+
+.layer-tab-item.disabled button:not(.active) {
+  opacity: 0.55;
+}
+
+.layer-enabled-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.layer-enabled-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--selection);
+}
+
+.layer-enabled-toggle:has(input:disabled) {
+  cursor: default;
+  opacity: 0.65;
+}
+
 .layer-tabs button,
 .layout-tabs button {
   min-width: 38px;

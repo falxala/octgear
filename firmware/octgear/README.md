@@ -6,6 +6,7 @@ RP2040 Arduino coreとAdafruit TinyUSBを使う、現行8キー + rotary encoder
 
 - 8 Direct inputとencoder A/B/SWのscan
 - 6 layers x 11 controlsのkeymap解決
+- Layer 1-5の有効状態を保存し、layer遷移から無効layerを除外
 - Keyboard / Consumer Control HID output
 - WebHID vendor reportによる設定とDiagnostics
 - Flash-backed EEPROM emulationへのkeymap保存

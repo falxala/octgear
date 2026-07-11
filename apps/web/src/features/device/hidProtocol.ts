@@ -12,6 +12,7 @@ export enum ConfigCommand {
   KeyEvent = 0x07,
   DiagnosticReport = 0x08,
   DiagnosticStorage = 0x09,
+  SetLayerEnabled = 0x0a,
 }
 
 export enum ConfigStatus {

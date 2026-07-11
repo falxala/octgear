@@ -29,6 +29,7 @@ enum class ConfigCommand : uint8_t {
   KeyEvent = 0x07,
   DiagnosticReport = 0x08,
   DiagnosticStorage = 0x09,
+  SetLayerEnabled = 0x0A,
 };
 
 enum class ConfigStatus : uint8_t {

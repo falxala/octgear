@@ -94,6 +94,10 @@ export const ja = {
     kicker: "Keymap",
     title: "Layers",
     layer: "Layer",
+    enabled: "有効",
+    disabled: "無効",
+    layerEnabledLabel: (layer: number) => `Layer ${layer} を有効にする`,
+    baseLayerRequired: "Layer 0は常に有効です",
     keys: "Keys",
     encoder: "Encoder",
     key: (index: number) => `Key ${index}`,
@@ -176,6 +180,7 @@ export const ja = {
     disconnected: "HIDデバイスが接続されていません",
     diagnosticReportUnsupported: "診断レポート未対応のファームウェアです。最新UF2を書き込んでください",
     diagnosticStorageUnsupported: "ストレージ診断未対応のファームウェアです。最新UF2を書き込んでください",
+    layerEnabledUnsupported: "レイヤー有効設定に未対応のファームウェアです。最新UF2を書き込んでください",
     invalidDiagnosticReport: "診断レポートの内容が一致しません",
     unexpectedResponse: (actual: number, expected: number) =>
       `Unexpected HID response command ${actual}; expected ${expected}`,

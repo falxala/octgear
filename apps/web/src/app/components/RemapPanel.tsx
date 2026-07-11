@@ -10,10 +10,12 @@ type RemapPanelProps = {
   connected: boolean;
   supportedKeyCount: number;
   layerCount: number;
+  enabledLayers: boolean[];
   layerAssignments: KeyAssignment[];
   onRead: () => void;
   onSave: () => void;
   onSelectLayer: (layerIndex: number) => void;
+  onLayerEnabledChange: (layerIndex: number, enabled: boolean) => void;
   onSelectKey: (keyIndex: number) => void;
 };
 
@@ -23,10 +25,12 @@ export function RemapPanel({
   connected,
   supportedKeyCount,
   layerCount,
+  enabledLayers,
   layerAssignments,
   onRead,
   onSave,
   onSelectLayer,
+  onLayerEnabledChange,
   onSelectKey,
 }: RemapPanelProps) {
   const controls = HARDWARE_CONFIG.controls.slice(0, layerAssignments.length);
@@ -54,14 +58,29 @@ export function RemapPanel({
         <span className="strip-label">{t.keymap.layer}</span>
         <div className="layer-tabs" aria-label={t.keymap.layer}>
           {Array.from({ length: layerCount }, (_, layerIndex) => (
-            <button
+            <div
               key={layerIndex}
-              type="button"
-              className={layerIndex === activeLayer ? "active" : ""}
-              onClick={() => onSelectLayer(layerIndex)}
+              className={`layer-tab-item ${enabledLayers[layerIndex] ? "enabled" : "disabled"}`}
             >
-              {layerIndex}
-            </button>
+              <button
+                type="button"
+                className={layerIndex === activeLayer ? "active" : ""}
+                onClick={() => onSelectLayer(layerIndex)}
+              >
+                {layerIndex}
+              </button>
+              <label className="layer-enabled-toggle">
+                <input
+                  type="checkbox"
+                  checked={enabledLayers[layerIndex] ?? true}
+                  disabled={layerIndex === 0}
+                  aria-label={t.keymap.layerEnabledLabel(layerIndex)}
+                  title={layerIndex === 0 ? t.keymap.baseLayerRequired : undefined}
+                  onChange={(event) => onLayerEnabledChange(layerIndex, event.target.checked)}
+                />
+                <span>{enabledLayers[layerIndex] ? t.keymap.enabled : t.keymap.disabled}</span>
+              </label>
+            </div>
           ))}
         </div>
       </div>

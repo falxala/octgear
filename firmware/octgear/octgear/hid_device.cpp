@@ -75,6 +75,7 @@ void handleGetState() {
     Config::LAYER_COUNT,
     Config::KEY_COUNT,
     Config::VIRTUAL_GROUND_COUNT,
+    enabledLayerMask(),
   };
 
   sendConfigResponse(ConfigCommand::GetState, ConfigStatus::Ok, payload, sizeof(payload));
@@ -87,13 +88,44 @@ void handleSetLayer(const uint8_t* buffer, uint16_t size) {
   }
 
   const uint8_t layer = buffer[1];
-  if (layer >= Config::LAYER_COUNT) {
+  if (!layerEnabled(layer)) {
     sendConfigResponse(ConfigCommand::SetLayer, ConfigStatus::OutOfRange, nullptr, 0);
     return;
   }
 
   setActiveLayer(layer);
   sendConfigResponse(ConfigCommand::SetLayer, ConfigStatus::Ok, &layer, 1);
+}
+
+void handleSetLayerEnabled(const uint8_t* buffer, uint16_t size) {
+  if (size < 3) {
+    sendConfigResponse(ConfigCommand::SetLayerEnabled, ConfigStatus::InvalidLength, nullptr, 0);
+    return;
+  }
+
+  const uint8_t layer = buffer[1];
+  const bool enabled = buffer[2] != 0;
+  const uint8_t previousMask = enabledLayerMask();
+  const uint8_t previousActiveLayer = activeLayer();
+  if (!setLayerEnabled(layer, enabled)) {
+    sendConfigResponse(ConfigCommand::SetLayerEnabled, ConfigStatus::OutOfRange, nullptr, 0);
+    return;
+  }
+
+  if (!saveLayerSettingsToStorage()) {
+    setEnabledLayerMask(previousMask);
+    setActiveLayer(previousActiveLayer);
+    sendConfigResponse(ConfigCommand::SetLayerEnabled, ConfigStatus::StorageError, nullptr, 0);
+    return;
+  }
+
+  const uint8_t payload[] = {
+    layer,
+    static_cast<uint8_t>(enabled ? 1 : 0),
+    activeLayer(),
+    enabledLayerMask(),
+  };
+  sendConfigResponse(ConfigCommand::SetLayerEnabled, ConfigStatus::Ok, payload, sizeof(payload));
 }
 
 void handleGetKey(const uint8_t* buffer, uint16_t size) {
@@ -267,6 +299,9 @@ void setReportCallback(uint8_t reportId, hid_report_type_t reportType, uint8_t c
     case ConfigCommand::DiagnosticStorage:
       handleDiagnosticStorage();
       break;
+    case ConfigCommand::SetLayerEnabled:
+      handleSetLayerEnabled(buffer, size);
+      break;
     default:
       sendConfigResponse(command, ConfigStatus::UnknownCommand, nullptr, 0);
       break;
@@ -298,7 +333,7 @@ void applyMomentaryLayerState() {
 }
 
 void pressMomentaryLayer(uint8_t keyIndex, uint8_t sourceLayer, uint8_t targetLayer) {
-  if (targetLayer >= Config::LAYER_COUNT) {
+  if (!layerEnabled(targetLayer)) {
     return;
   }
 
@@ -325,18 +360,25 @@ bool releaseMomentaryLayer(uint8_t keyIndex) {
   return true;
 }
 
-uint8_t nextLayer(uint8_t layer) {
-  return static_cast<uint8_t>((layer + 1) % Config::LAYER_COUNT);
+uint8_t nextEnabledLayer(uint8_t layer) {
+  for (uint8_t offset = 1; offset <= Config::LAYER_COUNT; offset++) {
+    const uint8_t candidate = static_cast<uint8_t>((layer + offset) % Config::LAYER_COUNT);
+    if (layerEnabled(candidate)) {
+      return candidate;
+    }
+  }
+
+  return 0;
 }
 
 void cyclePersistentLayer() {
   if (anyMomentaryLayerActive()) {
-    momentaryBaseLayer = nextLayer(momentaryBaseLayer);
+    momentaryBaseLayer = nextEnabledLayer(momentaryBaseLayer);
     applyMomentaryLayerState();
     return;
   }
 
-  setActiveLayer(nextLayer(activeLayer()));
+  setActiveLayer(nextEnabledLayer(activeLayer()));
 }
 
 void queueWakeKeyChange(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t layer) {

@@ -12,8 +12,9 @@ constexpr uint8_t STORAGE_MAGIC[4] = { 'C', 'M', '8', 'K' };
 constexpr uint8_t STORAGE_VERSION = 4;
 constexpr uint8_t STORAGE_HEADER_SIZE = 8;
 constexpr uint8_t ASSIGNMENT_RECORD_SIZE = 11;
-constexpr int STORAGE_SIZE =
+constexpr int LAYER_SETTINGS_ADDRESS =
   STORAGE_HEADER_SIZE + (Config::LAYER_COUNT * Config::KEY_COUNT * ASSIGNMENT_RECORD_SIZE);
+constexpr int STORAGE_SIZE = LAYER_SETTINGS_ADDRESS + 1;
 
 static_assert(STORAGE_SIZE <= 4096, "RP2040 EEPROM emulation supports up to 4096 bytes");
 
@@ -115,6 +116,8 @@ bool loadKeymapFromStorage() {
     }
   }
 
+  setEnabledLayerMask(EEPROM.read(LAYER_SETTINGS_ADDRESS));
+
   return true;
 }
 
@@ -126,6 +129,8 @@ bool saveKeymapToStorage() {
       writeAssignmentRecord(recordAddress(layer, keyIndex), assignmentFor(layer, keyIndex));
     }
   }
+
+  EEPROM.write(LAYER_SETTINGS_ADDRESS, enabledLayerMask());
 
   return EEPROM.commit();
 }
@@ -143,9 +148,21 @@ bool saveAssignmentToStorage(uint8_t layer, uint8_t keyIndex) {
   return EEPROM.commit();
 }
 
+bool saveLayerSettingsToStorage() {
+  if (!headerMatches()) {
+    return saveKeymapToStorage();
+  }
+
+  EEPROM.write(LAYER_SETTINGS_ADDRESS, enabledLayerMask());
+  return EEPROM.commit();
+}
+
 bool runKeymapStorageSelfTest() {
   KeyAssignment backup[Config::LAYER_COUNT][Config::KEY_COUNT];
   KeyAssignment pattern[Config::LAYER_COUNT][Config::KEY_COUNT];
+  const uint8_t backupLayerMask = enabledLayerMask();
+  const uint8_t backupActiveLayer = activeLayer();
+  const uint8_t patternLayerMask = static_cast<uint8_t>(0x55U & ((1U << Config::LAYER_COUNT) - 1U));
 
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
     for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
@@ -163,10 +180,17 @@ bool runKeymapStorageSelfTest() {
     }
   }
 
+  setEnabledLayerMask(patternLayerMask);
+
   bool ok = saveKeymapToStorage();
   if (ok) {
     clearKeymap();
+    setEnabledLayerMask(0x01);
     ok = loadKeymapFromStorage();
+  }
+
+  if (ok && enabledLayerMask() != patternLayerMask) {
+    ok = false;
   }
 
   if (ok) {
@@ -201,6 +225,9 @@ bool runKeymapStorageSelfTest() {
       setAssignment(layer, keyIndex, backup[layer][keyIndex]);
     }
   }
+
+  setEnabledLayerMask(backupLayerMask);
+  setActiveLayer(backupActiveLayer);
 
   const bool restored = saveKeymapToStorage();
   return ok && restored;
