@@ -105,7 +105,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   useEffect(() => () => cancelScheduledColorPreview(), []);
 
   useEffect(() => {
-    if (!connected || deviceLayerCount === 0 || deviceKeyCount === 0) {
+    if (!connected || deviceKeyCount === 0) {
       return;
     }
 
@@ -114,17 +114,13 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
         return;
       }
 
-      if (event.layer >= deviceLayerCount || event.keyIndex >= deviceKeyCount) {
+      if (event.keyIndex >= deviceKeyCount) {
         return;
       }
 
-      setActiveLayer(event.layer);
       setSelectedKey(event.keyIndex);
-      setDeviceState((current) =>
-        current && current.activeLayer !== event.layer ? { ...current, activeLayer: event.layer } : current,
-      );
     });
-  }, [connected, deviceKeyCount, deviceLayerCount, transport]);
+  }, [connected, deviceKeyCount, transport]);
 
   async function connectDevice() {
     try {

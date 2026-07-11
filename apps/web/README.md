@@ -58,7 +58,7 @@ Remapperは2つのkeymapを保持します。
 
 Layerの有効状態とRGB LED色も読込済みと編集中で分けて保持します。Layer 0は常時有効で、Layer 1-7はcheckboxから変更できます。初期状態ではLayer 0と1だけが有効です。RGB `0,0,0`は消灯として扱います。
 
-Save時はdeviceが返したlayer / key countへnormalizeし、assignment、layer有効状態、RGB色の差分だけを逐次保存します。Readは全keymapとlayer設定を再取得し、編集中内容を置き換えます。Physical `KeyEvent`のpressは対応するlayer / controlを選択します。
+Save時はdeviceが返したlayer / key countへnormalizeし、assignment、layer有効状態、RGB色の差分だけを逐次保存します。Readは全keymapとlayer設定を再取得し、編集中内容を置き換えます。Physical `KeyEvent`のpressは現在の表示layerを維持したまま、対応するcontrolだけを選択します。
 
 ## Firmware Updater
 

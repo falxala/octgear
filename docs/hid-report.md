@@ -64,7 +64,7 @@ byte 3..31  response payload
 
 通常の同期commandは、requestと同じcommandをbyte 0に持つresponseを1つ返します。`RemapperHeartbeat`と`EnterBootloader`は例外です。Heartbeatは応答を返さず、bootloader commandはdeviceが再起動するためresponseを待ちません。
 
-`KeyEvent` is an asynchronous device-to-Web input report. The firmware emits it when a physical key, encoder rotation, or encoder switch press is detected while the remapper heartbeat is active, so the UI can select the matching tile.
+`KeyEvent` is an asynchronous device-to-Web input report. The firmware emits it when a physical key, encoder rotation, or encoder switch press is detected while the remapper heartbeat is active. Remapper uses `keyIndex` to select the matching control and ignores `layer`, keeping the layer currently shown in the UI.
 
 `RemapperHeartbeat` is sent periodically by Remapper and Diagnostics. While the heartbeat is active, normal keyboard / consumer output is suppressed by firmware.
 
