@@ -1,4 +1,4 @@
-@container (max-width: 1180px) {
+@container (max-width: 1240px) {
   .layer-board,
   .consumer-board,
   .keyboard-picker {
@@ -7,7 +7,7 @@
   }
 }
 
-@container (max-width: 1080px) {
+@container (max-width: 1140px) {
   .layer-board,
   .consumer-board,
   .keyboard-picker {
@@ -16,7 +16,7 @@
   }
 }
 
-@container (max-width: 980px) {
+@container (max-width: 1030px) {
   .layer-board,
   .consumer-board,
   .keyboard-picker {
@@ -25,7 +25,7 @@
   }
 }
 
-@container (max-width: 900px) {
+@container (max-width: 940px) {
   .layer-board,
   .consumer-board,
   .keyboard-picker {
