@@ -3,6 +3,7 @@
 #include <Adafruit_NeoPixel.h>
 
 #include "config.h"
+#include "keymap.h"
 
 namespace {
 
@@ -28,19 +29,12 @@ uint32_t colorWheel(uint8_t position) {
   return statusPixel.Color(position * 3, 255 - position * 3, 0);
 }
 
-Config::StatusLedColor colorForLayer(uint8_t layer) {
-  if (layer >= Config::LAYER_COUNT) {
-    return Config::STATUS_LAYER_COLORS[0];
-  }
-
-  return Config::STATUS_LAYER_COLORS[layer];
-}
-
 void setKeyboardLayerLed(uint8_t layer) {
+  const LayerColor color = layerColor(layer);
   if (Config::STATUS_LED_KIND == Config::StatusLedKind::Digital) {
-    digitalWrite(Config::STATUS_LED_PIN, HIGH);
+    const bool on = color.red != 0 || color.green != 0 || color.blue != 0;
+    digitalWrite(Config::STATUS_LED_PIN, on ? HIGH : LOW);
   } else if (Config::STATUS_LED_KIND == Config::StatusLedKind::NeoPixel) {
-    const Config::StatusLedColor color = colorForLayer(layer);
     statusPixel.setPixelColor(0, statusPixel.Color(color.red, color.green, color.blue));
     statusPixel.show();
   }

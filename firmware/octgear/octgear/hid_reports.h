@@ -30,6 +30,8 @@ enum class ConfigCommand : uint8_t {
   DiagnosticReport = 0x08,
   DiagnosticStorage = 0x09,
   SetLayerEnabled = 0x0A,
+  GetLayerColor = 0x0B,
+  SetLayerColor = 0x0C,
 };
 
 enum class ConfigStatus : uint8_t {

@@ -3,6 +3,7 @@ import { HARDWARE_CONFIG } from "../../features/hardware/hardwareConfig";
 import { consumerOptionByUsage } from "../../features/keymap/keyPickerOptions";
 import type { KeyAssignment } from "../../features/keymap/keymapTypes";
 import { t } from "../../shared/i18n";
+import type { LayerColor } from "../../features/device/deviceCommands";
 
 type RemapPanelProps = {
   activeLayer: number;
@@ -11,11 +12,13 @@ type RemapPanelProps = {
   supportedKeyCount: number;
   layerCount: number;
   enabledLayers: boolean[];
+  layerColors: LayerColor[];
   layerAssignments: KeyAssignment[];
   onRead: () => void;
   onSave: () => void;
   onSelectLayer: (layerIndex: number) => void;
   onLayerEnabledChange: (layerIndex: number, enabled: boolean) => void;
+  onLayerColorChange: (layerIndex: number, color: LayerColor) => void;
   onSelectKey: (keyIndex: number) => void;
 };
 
@@ -26,16 +29,20 @@ export function RemapPanel({
   supportedKeyCount,
   layerCount,
   enabledLayers,
+  layerColors,
   layerAssignments,
   onRead,
   onSave,
   onSelectLayer,
   onLayerEnabledChange,
+  onLayerColorChange,
   onSelectKey,
 }: RemapPanelProps) {
   const controls = HARDWARE_CONFIG.controls.slice(0, layerAssignments.length);
   const keyControls = controls.filter((control) => control.kind === "key");
   const encoderControls = controls.filter((control) => control.kind !== "key");
+  const activeLayerColor = layerColors[activeLayer] ?? { red: 0, green: 0, blue: 0 };
+  const layerLedOn = activeLayerColor.red !== 0 || activeLayerColor.green !== 0 || activeLayerColor.blue !== 0;
 
   return (
     <section className="panel remap-panel">
@@ -56,32 +63,79 @@ export function RemapPanel({
 
       <div className="remap-strip">
         <span className="strip-label">{t.keymap.layer}</span>
-        <div className="layer-tabs" aria-label={t.keymap.layer}>
-          {Array.from({ length: layerCount }, (_, layerIndex) => (
-            <div
-              key={layerIndex}
-              className={`layer-tab-item ${enabledLayers[layerIndex] ? "enabled" : "disabled"}`}
-            >
-              <button
-                type="button"
-                className={layerIndex === activeLayer ? "active" : ""}
-                onClick={() => onSelectLayer(layerIndex)}
+        <div className="layer-config-map">
+          <div className="layer-tabs" aria-label={t.keymap.layer}>
+            {Array.from({ length: layerCount }, (_, layerIndex) => (
+              <div
+                key={layerIndex}
+                className={`layer-tab-item ${enabledLayers[layerIndex] ? "enabled" : "disabled"}`}
               >
-                {layerIndex}
-              </button>
-              <label className="layer-enabled-toggle">
+                <button
+                  type="button"
+                  className={layerIndex === activeLayer ? "active" : ""}
+                  onClick={() => onSelectLayer(layerIndex)}
+                >
+                  {layerIndex}
+                </button>
+                <label className="layer-enabled-toggle">
+                  <input
+                    type="checkbox"
+                    checked={enabledLayers[layerIndex] ?? true}
+                    disabled={layerIndex === 0}
+                    aria-label={t.keymap.layerEnabledLabel(layerIndex)}
+                    title={layerIndex === 0 ? t.keymap.baseLayerRequired : undefined}
+                    onChange={(event) => onLayerEnabledChange(layerIndex, event.target.checked)}
+                  />
+                  <span>{enabledLayers[layerIndex] ? t.keymap.enabled : t.keymap.disabled}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <div className="layer-color-editor">
+            <div className="layer-color-heading">
+              <span>{t.keymap.layerColor}</span>
+              <label className="layer-led-toggle">
                 <input
                   type="checkbox"
-                  checked={enabledLayers[layerIndex] ?? true}
-                  disabled={layerIndex === 0}
-                  aria-label={t.keymap.layerEnabledLabel(layerIndex)}
-                  title={layerIndex === 0 ? t.keymap.baseLayerRequired : undefined}
-                  onChange={(event) => onLayerEnabledChange(layerIndex, event.target.checked)}
+                  checked={layerLedOn}
+                  onChange={(event) =>
+                    onLayerColorChange(
+                      activeLayer,
+                      event.target.checked ? defaultLayerColor(activeLayer) : { red: 0, green: 0, blue: 0 },
+                    )
+                  }
                 />
-                <span>{enabledLayers[layerIndex] ? t.keymap.enabled : t.keymap.disabled}</span>
+                <span>{t.keymap.ledOn}</span>
               </label>
             </div>
-          ))}
+            <div className="layer-color-fields">
+              <input
+                type="color"
+                className="layer-color-swatch"
+                value={layerColorHex(activeLayerColor)}
+                aria-label={t.keymap.layerColor}
+                onChange={(event) => onLayerColorChange(activeLayer, layerColorFromHex(event.target.value))}
+              />
+              {(["red", "green", "blue"] as const).map((channel) => (
+                <label key={channel} className="layer-color-channel">
+                  <span>{channel[0].toUpperCase()}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={255}
+                    value={activeLayerColor[channel]}
+                    onChange={(event) =>
+                      onLayerColorChange(activeLayer, {
+                        ...activeLayerColor,
+                        [channel]: Number(event.target.value),
+                      })
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -122,6 +176,25 @@ export function RemapPanel({
       </div>
     </section>
   );
+}
+
+function defaultLayerColor(layer: number): LayerColor {
+  const [red, green, blue] = HARDWARE_CONFIG.defaultLayerColors[layer] ?? [255, 255, 255];
+  return { red, green, blue };
+}
+
+function layerColorHex(color: LayerColor) {
+  return `#${[color.red, color.green, color.blue]
+    .map((channel) => channel.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function layerColorFromHex(value: string): LayerColor {
+  return {
+    red: Number.parseInt(value.slice(1, 3), 16),
+    green: Number.parseInt(value.slice(3, 5), 16),
+    blue: Number.parseInt(value.slice(5, 7), 16),
+  };
 }
 
 function renderControlTile({

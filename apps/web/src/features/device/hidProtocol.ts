@@ -13,6 +13,8 @@ export enum ConfigCommand {
   DiagnosticReport = 0x08,
   DiagnosticStorage = 0x09,
   SetLayerEnabled = 0x0a,
+  GetLayerColor = 0x0b,
+  SetLayerColor = 0x0c,
 }
 
 export enum ConfigStatus {

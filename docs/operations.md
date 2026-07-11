@@ -14,7 +14,8 @@ RemapperはWebHIDでOctGearへ接続します。Web Serialは使いません。
 4. 接続時に全layer / controlのkeymapが読み込まれます。
 5. layerとcontrolを選び、割り当てを編集します。
 6. Layer 1-7は各checkboxで有効／無効を選びます。初期状態ではLayer 0/1が有効です。
-7. Saveで、最後に読み込んだ内容との差分だけをdeviceへ書き込みます。
+7. 選択LayerのLED色をswatchまたはR/G/Bで設定します。点灯checkboxを外すと消灯します。
+8. Saveで、最後に読み込んだ内容との差分だけをdeviceへ書き込みます。
 
 Readはdeviceから全keymapとlayer設定を再読込し、未保存の編集内容を置き換えます。Saveは全layer / controlを比較しますが、変更がない設定へのFlash writeは行いません。Layer 0は安全なbase layerとして常に有効です。
 
@@ -103,6 +104,7 @@ Layerは`0-7`、key番号は`1-11`です。数値はdecimalまたは`0x`付きhe
 | `cycle <layer> <key>` | Layer Cycleを設定 | Yes |
 | `back <layer> <key>` | Previous Layerを設定 | Yes |
 | `hold <layer> <key> <target>` | Momentary Layerを設定 | Yes |
+| `color <layer> <red> <green> <blue>` | Layer LED色を設定。`0 0 0`で消灯 | Yes |
 | `diag` | Storage self-testを実行 | Test writes |
 | `bootloader` | UF2 bootloaderへ再起動 | No |
 
@@ -117,6 +119,8 @@ consumer 0 1 0x00e2
 cycle 0 8
 back 0 7
 hold 0 5 2
+color 0 32 160 255
+color 7 0 0 0
 ```
 
 Keyboard modifier bitmap:
@@ -132,7 +136,7 @@ Keyboard modifier bitmap:
 | `0x40` | Right Alt |
 | `0x80` | Right GUI |
 
-`none`、`key`、`consumer`、`cycle`、`back`、`hold`は成功時にそのassignmentを即座にFlashへ保存します。`diag`はWeb DiagnosticsのStorage testと同じ保存領域を検査します。
+`none`、`key`、`consumer`、`cycle`、`back`、`hold`、`color`は成功時に設定を即座にFlashへ保存します。`diag`はWeb DiagnosticsのStorage testと同じ保存領域を検査します。
 
 ## Troubleshooting
 

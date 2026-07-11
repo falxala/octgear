@@ -34,6 +34,7 @@ function validateProfile(value) {
     throw new Error("layerCount must be within 1-8 for the layer mask");
   }
   requireArray(value.defaultEnabledLayers, "defaultEnabledLayers");
+  requireArray(value.defaultLayerColors, "defaultLayerColors");
   requireArray(value.keys, "keys");
   requireArray(value.virtualGrounds, "virtualGrounds");
   requireObject(value.encoder, "encoder");
@@ -52,6 +53,22 @@ function validateProfile(value) {
   if (!enabledLayerSet.has(0)) {
     throw new Error("defaultEnabledLayers must include Layer 0");
   }
+
+  if (value.defaultLayerColors.length !== value.layerCount) {
+    throw new Error("defaultLayerColors length must match layerCount");
+  }
+  value.defaultLayerColors.forEach((color, layer) => {
+    requireArray(color, `defaultLayerColors[${layer}]`);
+    if (color.length !== 3) {
+      throw new Error(`defaultLayerColors[${layer}] must contain RGB values`);
+    }
+    color.forEach((channel, index) => {
+      requireInteger(channel, `defaultLayerColors[${layer}][${index}]`);
+      if (channel < 0 || channel > 255) {
+        throw new Error(`defaultLayerColors[${layer}][${index}] must be within 0-255`);
+      }
+    });
+  });
 
   value.keys.forEach((key, index) => {
     requireInteger(key.firmwareIndex, `keys[${index}].firmwareIndex`);
@@ -102,6 +119,9 @@ constexpr uint8_t ENCODER_CONTROL_COUNT = ${encoderControlCount};
 constexpr uint8_t KEY_COUNT = PHYSICAL_KEY_COUNT + ENCODER_CONTROL_COUNT;
 constexpr uint8_t LAYER_COUNT = ${profile.layerCount};
 constexpr uint8_t DEFAULT_ENABLED_LAYER_MASK = ${hexByte(defaultEnabledLayerMask)};
+constexpr uint8_t DEFAULT_LAYER_COLORS[LAYER_COUNT][3] = {
+${profile.defaultLayerColors.map((color) => `  { ${color.join(", ")} },`).join("\n")}
+};
 constexpr uint8_t VIRTUAL_GROUND_COUNT = ${profile.virtualGrounds.length};
 
 using KeyMask = uint16_t;
@@ -151,6 +171,7 @@ export const HARDWARE_CONFIG = {
   keyCount: keyControls.length + encoderControls.length,
   layerCount: ${profile.layerCount},
   defaultEnabledLayers: ${json(profile.defaultEnabledLayers)} as readonly number[],
+  defaultLayerColors: ${json(profile.defaultLayerColors)} as readonly (readonly [number, number, number])[],
   virtualGroundCount: ${profile.virtualGrounds.length},
   externalRgbLed: ${profile.externalRgbLed ? "true" : "false"},
   oled: ${profile.oled ? "true" : "false"},

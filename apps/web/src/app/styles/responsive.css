@@ -43,6 +43,10 @@
     grid-template-columns: 1fr;
   }
 
+  .layer-config-map {
+    grid-template-columns: 1fr;
+  }
+
   .hardware-panel {
     grid-column: 1;
     grid-row: 1;
@@ -120,7 +124,7 @@
     flex-direction: column;
   }
 
-  .remap-strip .layer-tabs,
+  .remap-strip .layer-config-map,
   .remap-strip .control-map {
     width: 100%;
   }

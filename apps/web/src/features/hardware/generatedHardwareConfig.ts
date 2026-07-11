@@ -23,6 +23,7 @@ export const HARDWARE_CONFIG = {
   keyCount: keyControls.length + encoderControls.length,
   layerCount: 8,
   defaultEnabledLayers: [0,1] as readonly number[],
+  defaultLayerColors: [[255,255,255],[255,0,0],[0,180,255],[0,255,80],[255,160,0],[180,0,255],[0,255,220],[255,70,140]] as readonly (readonly [number, number, number])[],
   virtualGroundCount: 2,
   externalRgbLed: false,
   oled: false,

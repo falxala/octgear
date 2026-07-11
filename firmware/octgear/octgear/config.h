@@ -14,12 +14,6 @@ enum class StatusLedKind : uint8_t {
   NeoPixel,
 };
 
-struct StatusLedColor {
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
-};
-
 #if defined(PIN_NEOPIXEL)
 constexpr StatusLedKind STATUS_LED_KIND = StatusLedKind::NeoPixel;
 constexpr uint8_t STATUS_LED_PIN = PIN_NEOPIXEL;
@@ -36,16 +30,6 @@ constexpr uint8_t STATUS_LED_PIN = 255;
 
 constexpr uint8_t STATUS_LED_BRIGHTNESS = 200;
 constexpr uint8_t STATUS_RESCUE_GREEN = 18;
-constexpr StatusLedColor STATUS_LAYER_COLORS[LAYER_COUNT] = {
-  { 255, 255, 255 },
-  { 255, 0, 0 },
-  { 0, 180, 255 },
-  { 0, 255, 80 },
-  { 255, 160, 0 },
-  { 180, 0, 255 },
-  { 0, 255, 220 },
-  { 255, 70, 140 },
-};
 
 constexpr uint16_t DEBOUNCE_US = 5000;
 constexpr uint16_t IDLE_SCAN_SLEEP_US = 100;

@@ -156,9 +156,12 @@ void printHelp() {
   Serial.print(F("  hold <layer> <key 1-"));
   Serial.print(Config::KEY_COUNT);
   Serial.println(F("> <target layer>"));
+  Serial.print(F("  color <layer 0-"));
+  Serial.print(Config::LAYER_COUNT - 1);
+  Serial.println(F("> <red> <green> <blue>"));
   Serial.println(F("  diag"));
   Serial.println(F("  bootloader"));
-  Serial.println(F("Numbers accept decimal or 0xHEX. key/none/consumer/cycle/back/hold save immediately."));
+  Serial.println(F("Numbers accept decimal or 0xHEX. key/none/consumer/cycle/back/hold/color save immediately."));
 }
 
 void handleState() {
@@ -306,6 +309,29 @@ void handleHold(char*& cursor) {
   saveParsedAssignment(layer, keyIndex, momentaryLayerAssignment(targetLayer));
 }
 
+void handleColor(char*& cursor) {
+  uint8_t layer = 0;
+  LayerColor color = { 0, 0, 0 };
+  if (!parseByte(cursor, layer) ||
+      !parseByte(cursor, color.red) ||
+      !parseByte(cursor, color.green) ||
+      !parseByte(cursor, color.blue) ||
+      layer >= Config::LAYER_COUNT) {
+    Serial.println(F("ERR color"));
+    return;
+  }
+
+  const LayerColor previousColor = layerColor(layer);
+  setLayerColor(layer, color);
+  if (!saveLayerColorToStorage(layer)) {
+    setLayerColor(layer, previousColor);
+    Serial.println(F("ERR storage"));
+    return;
+  }
+
+  Serial.println(F("OK"));
+}
+
 void handleDiag() {
   Serial.println(runKeymapStorageSelfTest() ? F("OK storage") : F("ERR storage"));
 }
@@ -352,6 +378,8 @@ void handleCommand(char* line) {
     handleBack(cursor);
   } else if (strcmp(command, "hold") == 0) {
     handleHold(cursor);
+  } else if (strcmp(command, "color") == 0) {
+    handleColor(cursor);
   } else if (strcmp(command, "diag") == 0) {
     handleDiag();
   } else if (strcmp(command, "bootloader") == 0) {

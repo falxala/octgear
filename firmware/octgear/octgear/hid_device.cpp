@@ -128,6 +128,47 @@ void handleSetLayerEnabled(const uint8_t* buffer, uint16_t size) {
   sendConfigResponse(ConfigCommand::SetLayerEnabled, ConfigStatus::Ok, payload, sizeof(payload));
 }
 
+void handleGetLayerColor(const uint8_t* buffer, uint16_t size) {
+  if (size < 2) {
+    sendConfigResponse(ConfigCommand::GetLayerColor, ConfigStatus::InvalidLength, nullptr, 0);
+    return;
+  }
+
+  const uint8_t layer = buffer[1];
+  if (layer >= Config::LAYER_COUNT) {
+    sendConfigResponse(ConfigCommand::GetLayerColor, ConfigStatus::OutOfRange, nullptr, 0);
+    return;
+  }
+
+  const LayerColor color = layerColor(layer);
+  const uint8_t payload[] = { layer, color.red, color.green, color.blue };
+  sendConfigResponse(ConfigCommand::GetLayerColor, ConfigStatus::Ok, payload, sizeof(payload));
+}
+
+void handleSetLayerColor(const uint8_t* buffer, uint16_t size) {
+  if (size < 5) {
+    sendConfigResponse(ConfigCommand::SetLayerColor, ConfigStatus::InvalidLength, nullptr, 0);
+    return;
+  }
+
+  const uint8_t layer = buffer[1];
+  const LayerColor previousColor = layerColor(layer);
+  const LayerColor color = { buffer[2], buffer[3], buffer[4] };
+  if (!setLayerColor(layer, color)) {
+    sendConfigResponse(ConfigCommand::SetLayerColor, ConfigStatus::OutOfRange, nullptr, 0);
+    return;
+  }
+
+  if (!saveLayerColorToStorage(layer)) {
+    setLayerColor(layer, previousColor);
+    sendConfigResponse(ConfigCommand::SetLayerColor, ConfigStatus::StorageError, nullptr, 0);
+    return;
+  }
+
+  const uint8_t payload[] = { layer, color.red, color.green, color.blue };
+  sendConfigResponse(ConfigCommand::SetLayerColor, ConfigStatus::Ok, payload, sizeof(payload));
+}
+
 void handleGetKey(const uint8_t* buffer, uint16_t size) {
   if (size < 3) {
     sendConfigResponse(ConfigCommand::GetKey, ConfigStatus::InvalidLength, nullptr, 0);
@@ -302,6 +343,12 @@ void setReportCallback(uint8_t reportId, hid_report_type_t reportType, uint8_t c
       break;
     case ConfigCommand::SetLayerEnabled:
       handleSetLayerEnabled(buffer, size);
+      break;
+    case ConfigCommand::GetLayerColor:
+      handleGetLayerColor(buffer, size);
+      break;
+    case ConfigCommand::SetLayerColor:
+      handleSetLayerColor(buffer, size);
       break;
     default:
       sendConfigResponse(command, ConfigStatus::UnknownCommand, nullptr, 0);

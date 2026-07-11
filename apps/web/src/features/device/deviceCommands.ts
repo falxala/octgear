@@ -32,6 +32,12 @@ export type LayerEnabledResult = {
   enabledLayers: boolean[];
 };
 
+export type LayerColor = {
+  red: number;
+  green: number;
+  blue: number;
+};
+
 export type DeviceKeyEvent = {
   layer: number;
   keyIndex: number;
@@ -87,6 +93,46 @@ export async function setDeviceLayerEnabled(
     activeLayer: response.payload[2] ?? 0,
     enabledLayers: decodeEnabledLayers(response.payload[3] ?? 1, layerCount),
   };
+}
+
+export async function readDeviceLayerColors(
+  transport: WebHidTransport,
+  layerCount: number,
+  fallbackColors: readonly (readonly [number, number, number])[],
+): Promise<LayerColor[]> {
+  const colors: LayerColor[] = [];
+
+  for (let layer = 0; layer < layerCount; layer++) {
+    const response = await sendCommand(transport, ConfigCommand.GetLayerColor, [layer]);
+    if (response.status === ConfigStatus.UnknownCommand || response.status === ConfigStatus.Unsupported) {
+      return Array.from({ length: layerCount }, (_, index) => colorFromTuple(fallbackColors[index]));
+    }
+    assertConfigOk(response);
+    colors.push({
+      red: response.payload[1] ?? 0,
+      green: response.payload[2] ?? 0,
+      blue: response.payload[3] ?? 0,
+    });
+  }
+
+  return colors;
+}
+
+export async function setDeviceLayerColor(
+  transport: WebHidTransport,
+  layer: number,
+  color: LayerColor,
+) {
+  const response = await sendCommand(transport, ConfigCommand.SetLayerColor, [
+    layer,
+    clampColorChannel(color.red),
+    clampColorChannel(color.green),
+    clampColorChannel(color.blue),
+  ]);
+  if (response.status === ConfigStatus.UnknownCommand || response.status === ConfigStatus.Unsupported) {
+    throw new Error(t.device.layerColorUnsupported);
+  }
+  assertConfigOk(response);
 }
 
 export async function getDeviceKey(transport: WebHidTransport, layer: number, keyIndex: number) {
@@ -274,4 +320,16 @@ function decodeAssignmentPayload(payload: Uint8Array): KeyAssignment {
 
 function decodeEnabledLayers(mask: number, layerCount: number) {
   return Array.from({ length: layerCount }, (_, layer) => (mask & (1 << layer)) !== 0);
+}
+
+function colorFromTuple(color: readonly [number, number, number] | undefined): LayerColor {
+  return {
+    red: color?.[0] ?? 0,
+    green: color?.[1] ?? 0,
+    blue: color?.[2] ?? 0,
+  };
+}
+
+function clampColorChannel(value: number) {
+  return Math.max(0, Math.min(255, Math.trunc(value)));
 }

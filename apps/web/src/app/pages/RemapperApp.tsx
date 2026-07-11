@@ -23,12 +23,15 @@ import {
   enterDeviceBootloader,
   getDeviceState,
   readDeviceKeymap,
+  readDeviceLayerColors,
   sendRemapperHeartbeat,
   setDeviceLayer,
   setDeviceLayerEnabled,
+  setDeviceLayerColor,
   setDeviceKey,
   subscribeDeviceKeyEvents,
   type DeviceState,
+  type LayerColor,
 } from "../../features/device/deviceCommands";
 import { WebHidTransport } from "../../features/device/webHidTransport";
 import {
@@ -71,6 +74,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   const [writeKeymap, setWriteKeymap] = useState(createInitialKeymap);
   const [readEnabledLayers, setReadEnabledLayers] = useState(createInitialEnabledLayers);
   const [writeEnabledLayers, setWriteEnabledLayers] = useState(createInitialEnabledLayers);
+  const [readLayerColors, setReadLayerColors] = useState(createInitialLayerColors);
+  const [writeLayerColors, setWriteLayerColors] = useState(createInitialLayerColors);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayoutMode>("jis");
   const selectedAssignment = writeKeymap[activeLayer]?.[selectedKey] ?? normalizeAssignment({ kind: "none" });
   const [draftAssignment, setDraftAssignment] = useState<KeyAssignment>(selectedAssignment);
@@ -120,6 +125,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       await sendRemapperHeartbeat(transport);
       const state = await getDeviceState(transport);
       const loadedKeymap = await readDeviceKeymap(transport, state.layerCount, state.keyCount);
+      const loadedLayerColors = await readDeviceLayerColors(
+        transport,
+        state.layerCount,
+        HARDWARE_CONFIG.defaultLayerColors,
+      );
       console.info("[hid] connected", {
         productName: device.productName,
         vendorId: `0x${device.vendorId.toString(16).padStart(4, "0").toUpperCase()}`,
@@ -131,6 +141,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
       setReadEnabledLayers(state.enabledLayers);
       setWriteEnabledLayers(state.enabledLayers);
+      setReadLayerColors(loadedLayerColors);
+      setWriteLayerColors(loadedLayerColors);
       setActiveLayer(state.activeLayer);
       setSelectedKey((current) => (current < state.keyCount ? current : 0));
       setStatus(t.connection.connectedTo(device.productName || t.device.fallbackName));
@@ -166,12 +178,19 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       setStatus(t.keymap.reading);
       const state = await getDeviceState(transport);
       const loadedKeymap = await readDeviceKeymap(transport, state.layerCount, state.keyCount);
+      const loadedLayerColors = await readDeviceLayerColors(
+        transport,
+        state.layerCount,
+        HARDWARE_CONFIG.defaultLayerColors,
+      );
       const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
       setDeviceState(state);
       setReadKeymap(uiKeymap);
       setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
       setReadEnabledLayers(state.enabledLayers);
       setWriteEnabledLayers(state.enabledLayers);
+      setReadLayerColors(loadedLayerColors);
+      setWriteLayerColors(loadedLayerColors);
       setStatus(t.keymap.readComplete);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t.keymap.readFailed);
@@ -193,7 +212,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
     const layerTargets = writeEnabledLayers
       .map((enabled, layer) => ({ layer, enabled }))
       .filter(({ layer, enabled }) => layer > 0 && readEnabledLayers[layer] !== enabled);
-    if (saveTargets.length === 0 && layerTargets.length === 0) {
+    const colorTargets = writeLayerColors
+      .slice(0, deviceState.layerCount)
+      .map((color, layer) => ({ layer, color }))
+      .filter(({ layer, color }) => !sameLayerColor(readLayerColors[layer], color));
+    if (saveTargets.length === 0 && layerTargets.length === 0 && colorTargets.length === 0) {
       setStatus(t.keymap.saveSkippedAll);
       return;
     }
@@ -215,6 +238,10 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
         };
       }
 
+      for (const { layer, color } of colorTargets) {
+        await setDeviceLayerColor(transport, layer, color);
+      }
+
       for (const { layer, keyIndex, assignment } of saveTargets) {
         await setDeviceKey(transport, layer, keyIndex, assignment);
       }
@@ -223,8 +250,9 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       setReadKeymap(keymapToSave);
       setWriteKeymap(keymapToSave);
       setReadEnabledLayers(writeEnabledLayers);
+      setReadLayerColors(writeLayerColors);
       setStatus(t.keymap.savedAll(
-        saveTargets.length + layerTargets.length,
+        saveTargets.length + layerTargets.length + colorTargets.length,
         deviceState.layerCount,
         deviceState.keyCount,
       ));
@@ -376,6 +404,12 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
     );
   }
 
+  function updateLayerColor(layer: number, color: LayerColor) {
+    setWriteLayerColors((current) =>
+      current.map((value, index) => (index === layer ? normalizeLayerColor(color) : value)),
+    );
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -414,11 +448,13 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
           supportedKeyCount={connected ? deviceKeyCount : writeKeymap[activeLayer]?.length ?? 0}
           layerCount={writeKeymap.length}
           enabledLayers={writeEnabledLayers}
+          layerColors={writeLayerColors}
           layerAssignments={writeKeymap[activeLayer]}
           onRead={() => void readAllAssignments()}
           onSave={() => void saveAllAssignments()}
           onSelectLayer={(layerIndex) => void selectLayer(layerIndex)}
           onLayerEnabledChange={updateLayerEnabled}
+          onLayerColorChange={updateLayerColor}
           onSelectKey={setSelectedKey}
         />
         <EditorPanel
@@ -492,4 +528,24 @@ function createInitialEnabledLayers() {
     { length: HARDWARE_CONFIG.layerCount },
     (_, layer) => HARDWARE_CONFIG.defaultEnabledLayers.includes(layer),
   );
+}
+
+function createInitialLayerColors(): LayerColor[] {
+  return HARDWARE_CONFIG.defaultLayerColors.map(([red, green, blue]) => ({ red, green, blue }));
+}
+
+function normalizeLayerColor(color: LayerColor): LayerColor {
+  return {
+    red: clampColorChannel(color.red),
+    green: clampColorChannel(color.green),
+    blue: clampColorChannel(color.blue),
+  };
+}
+
+function sameLayerColor(first: LayerColor | undefined, second: LayerColor) {
+  return first?.red === second.red && first.green === second.green && first.blue === second.blue;
+}
+
+function clampColorChannel(value: number) {
+  return Math.max(0, Math.min(255, Math.trunc(value)));
 }

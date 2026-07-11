@@ -98,6 +98,8 @@ export const ja = {
     disabled: "無効",
     layerEnabledLabel: (layer: number) => `Layer ${layer} を有効にする`,
     baseLayerRequired: "Layer 0は常に有効です",
+    layerColor: "LED Color",
+    ledOn: "点灯",
     keys: "Keys",
     encoder: "Encoder",
     key: (index: number) => `Key ${index}`,
@@ -183,6 +185,7 @@ export const ja = {
     diagnosticReportUnsupported: "診断レポート未対応のファームウェアです。最新UF2を書き込んでください",
     diagnosticStorageUnsupported: "ストレージ診断未対応のファームウェアです。最新UF2を書き込んでください",
     layerEnabledUnsupported: "レイヤー有効設定に未対応のファームウェアです。最新UF2を書き込んでください",
+    layerColorUnsupported: "レイヤー色設定に未対応のファームウェアです。最新UF2を書き込んでください",
     invalidDiagnosticReport: "診断レポートの内容が一致しません",
     unexpectedResponse: (actual: number, expected: number) =>
       `Unexpected HID response command ${actual}; expected ${expected}`,

@@ -9,6 +9,7 @@ uint8_t currentLayer = 0;
 static_assert(Config::LAYER_COUNT > 0 && Config::LAYER_COUNT <= 8, "Layer mask supports 1-8 layers");
 constexpr uint8_t ALL_LAYERS_ENABLED_MASK = static_cast<uint8_t>((1U << Config::LAYER_COUNT) - 1U);
 uint8_t currentEnabledLayerMask = Config::DEFAULT_ENABLED_LAYER_MASK;
+LayerColor currentLayerColors[Config::LAYER_COUNT];
 KeyAssignment keymap[Config::LAYER_COUNT][Config::KEY_COUNT];
 
 void setDefaultLayer0() {
@@ -65,12 +66,40 @@ void clearKeymap() {
 }
 
 void beginKeymap() {
+  resetLayerColors();
   setDefaultKeymap();
   beginKeymapStorage();
 
   if (!loadKeymapFromStorage()) {
     setDefaultKeymap();
     saveKeymapToStorage();
+  }
+}
+
+LayerColor layerColor(uint8_t layer) {
+  if (layer >= Config::LAYER_COUNT) {
+    layer = 0;
+  }
+
+  return currentLayerColors[layer];
+}
+
+bool setLayerColor(uint8_t layer, const LayerColor& color) {
+  if (layer >= Config::LAYER_COUNT) {
+    return false;
+  }
+
+  currentLayerColors[layer] = color;
+  return true;
+}
+
+void resetLayerColors() {
+  for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    currentLayerColors[layer] = {
+      Config::DEFAULT_LAYER_COLORS[layer][0],
+      Config::DEFAULT_LAYER_COLORS[layer][1],
+      Config::DEFAULT_LAYER_COLORS[layer][2],
+    };
   }
 }
 

@@ -13,9 +13,12 @@ constexpr uint8_t STORAGE_VERSION = 4;
 constexpr uint8_t STORAGE_HEADER_SIZE = 8;
 constexpr uint8_t ASSIGNMENT_RECORD_SIZE = 11;
 constexpr uint8_t LEGACY_LAYER_COUNT = 6;
+constexpr uint8_t LAYER_COLOR_MARKER = 0xC7;
 constexpr int LAYER_SETTINGS_ADDRESS =
   STORAGE_HEADER_SIZE + (Config::LAYER_COUNT * Config::KEY_COUNT * ASSIGNMENT_RECORD_SIZE);
-constexpr int STORAGE_SIZE = LAYER_SETTINGS_ADDRESS + 1;
+constexpr int LAYER_COLOR_MARKER_ADDRESS = LAYER_SETTINGS_ADDRESS + 1;
+constexpr int LAYER_COLORS_ADDRESS = LAYER_COLOR_MARKER_ADDRESS + 1;
+constexpr int STORAGE_SIZE = LAYER_COLORS_ADDRESS + (Config::LAYER_COUNT * 3);
 
 static_assert(STORAGE_SIZE <= 4096, "RP2040 EEPROM emulation supports up to 4096 bytes");
 
@@ -46,6 +49,29 @@ bool headerMatches() {
 
 int layerSettingsAddress(uint8_t layerCount) {
   return STORAGE_HEADER_SIZE + (layerCount * Config::KEY_COUNT * ASSIGNMENT_RECORD_SIZE);
+}
+
+int layerColorMarkerAddress(uint8_t layerCount) {
+  return layerSettingsAddress(layerCount) + 1;
+}
+
+int layerColorAddress(uint8_t layer, int colorsAddress = LAYER_COLORS_ADDRESS) {
+  return colorsAddress + (layer * 3);
+}
+
+void writeLayerColor(uint8_t layer) {
+  const LayerColor color = layerColor(layer);
+  const int address = layerColorAddress(layer);
+  EEPROM.write(address, color.red);
+  EEPROM.write(address + 1, color.green);
+  EEPROM.write(address + 2, color.blue);
+}
+
+void writeAllLayerColors() {
+  EEPROM.write(LAYER_COLOR_MARKER_ADDRESS, LAYER_COLOR_MARKER);
+  for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    writeLayerColor(layer);
+  }
 }
 
 void writeHeader() {
@@ -139,6 +165,19 @@ bool loadKeymapFromStorage() {
 
   setEnabledLayerMask(EEPROM.read(layerSettingsAddress(storedLayerCount)));
 
+  const int storedColorMarkerAddress = layerColorMarkerAddress(storedLayerCount);
+  if (!migratingLegacyLayers && EEPROM.read(storedColorMarkerAddress) == LAYER_COLOR_MARKER) {
+    const int storedColorsAddress = storedColorMarkerAddress + 1;
+    for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+      const int address = layerColorAddress(layer, storedColorsAddress);
+      setLayerColor(layer, {
+        EEPROM.read(address),
+        EEPROM.read(address + 1),
+        EEPROM.read(address + 2),
+      });
+    }
+  }
+
   if (migratingLegacyLayers) {
     saveKeymapToStorage();
   }
@@ -156,6 +195,7 @@ bool saveKeymapToStorage() {
   }
 
   EEPROM.write(LAYER_SETTINGS_ADDRESS, enabledLayerMask());
+  writeAllLayerColors();
 
   return EEPROM.commit();
 }
@@ -182,14 +222,41 @@ bool saveLayerSettingsToStorage() {
   return EEPROM.commit();
 }
 
+bool saveLayerColorToStorage(uint8_t layer) {
+  if (layer >= Config::LAYER_COUNT) {
+    return false;
+  }
+
+  if (!headerMatches()) {
+    return saveKeymapToStorage();
+  }
+
+  if (EEPROM.read(LAYER_COLOR_MARKER_ADDRESS) != LAYER_COLOR_MARKER) {
+    writeAllLayerColors();
+  } else {
+    writeLayerColor(layer);
+  }
+  return EEPROM.commit();
+}
+
 bool runKeymapStorageSelfTest() {
   KeyAssignment backup[Config::LAYER_COUNT][Config::KEY_COUNT];
   KeyAssignment pattern[Config::LAYER_COUNT][Config::KEY_COUNT];
   const uint8_t backupLayerMask = enabledLayerMask();
   const uint8_t backupActiveLayer = activeLayer();
   const uint8_t patternLayerMask = static_cast<uint8_t>(0x55U & ((1U << Config::LAYER_COUNT) - 1U));
+  LayerColor backupLayerColors[Config::LAYER_COUNT];
+  LayerColor patternLayerColors[Config::LAYER_COUNT];
 
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    backupLayerColors[layer] = layerColor(layer);
+    patternLayerColors[layer] = {
+      static_cast<uint8_t>(17 + layer),
+      static_cast<uint8_t>(83 + layer),
+      static_cast<uint8_t>(149 + layer),
+    };
+    setLayerColor(layer, patternLayerColors[layer]);
+
     for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
       backup[layer][keyIndex] = assignmentFor(layer, keyIndex);
 
@@ -211,11 +278,23 @@ bool runKeymapStorageSelfTest() {
   if (ok) {
     clearKeymap();
     setEnabledLayerMask(0x01);
+    resetLayerColors();
     ok = loadKeymapFromStorage();
   }
 
   if (ok && enabledLayerMask() != patternLayerMask) {
     ok = false;
+  }
+
+  if (ok) {
+    for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+      const LayerColor actual = layerColor(layer);
+      const LayerColor expected = patternLayerColors[layer];
+      if (actual.red != expected.red || actual.green != expected.green || actual.blue != expected.blue) {
+        ok = false;
+        break;
+      }
+    }
   }
 
   if (ok) {
@@ -253,6 +332,9 @@ bool runKeymapStorageSelfTest() {
 
   setEnabledLayerMask(backupLayerMask);
   setActiveLayer(backupActiveLayer);
+  for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    setLayerColor(layer, backupLayerColors[layer]);
+  }
 
   const bool restored = saveKeymapToStorage();
   return ok && restored;

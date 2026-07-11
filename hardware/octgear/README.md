@@ -1,6 +1,6 @@
 # OctGear Hardware
 
-現行8キー + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control、pin mapping、layer count、default enabled layersを管理します。
+現行8キー + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control、pin mapping、layer count、default enabled layers、default layer colorsを管理します。
 
 ## Files
 
