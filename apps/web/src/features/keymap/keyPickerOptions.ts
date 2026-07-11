@@ -150,7 +150,7 @@ const jisKeyboardRows: KeyPickerOption[][] = [
     mod(0x08, "Meta", 1.25),
     mod(0x04, "Alt", 1.25),
     key(139, "無変換", { jisLabel: "無変換", width: 1.25, accent: true }),
-    key(44, "Space", { width: 5, accent: true }),
+    key(44, "Space", { width: 4.25, accent: true }),
     key(138, "変換", { jisLabel: "変換", width: 1.25, accent: true }),
     key(136, "Kana", { jisLabel: "Kana", width: 1.25, accent: true }),
     mod(0x40, "Alt", 1.25, true),
