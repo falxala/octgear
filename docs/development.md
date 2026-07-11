@@ -89,7 +89,7 @@ pnpm firmware:build
 pnpm firmware:web
 ```
 
-出力される`apps/web/public/firmware/octgear.uf2`と`RESCUE.CMD`はWeb buildへ含まれます。既定boardは`rp2040:rp2040:waveshare_rp2040_zero`、board optionsは`usbstack=tinyusb,freq=125`です。
+出力される`apps/web/public/firmware/octgear.uf2`と`RESCUE.CMD`はWeb buildへ含まれます。既定boardは`rp2040:rp2040:waveshare_rp2040_zero`、board optionsは`usbstack=tinyusb,freq=125,flash=2097152_65536`です。64KBの予約領域は3-sector Flash journalに必要です。
 
 Build identityは環境変数でoverrideできます。
 
