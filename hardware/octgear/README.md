@@ -1,5 +1,7 @@
 # OctGear Hardware
 
+The materials in this directory are provided under the [OctGear Hardware License 1.0](../../HARDWARE-LICENSE.md). Personal, non-commercial builds are permitted. Commercial manufacture or sale of the reference hardware without material hardware changes is prohibited.
+
 現行8キー + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control、pin mapping、layer count、default enabled layers、default layer colorsを管理します。
 
 ## Files

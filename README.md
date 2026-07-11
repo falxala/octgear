@@ -101,3 +101,17 @@ Key 5を押しながらUSB接続すると、その起動だけread-onlyの`OCTGE
 | [Web App](apps/web/README.md) | Webアプリ内部の構成 |
 | [Firmware](firmware/octgear/README.md) | Firmwareの構成とbuild |
 | [Hardware](hardware/octgear/README.md) | Hardware profileと生成物 |
+
+## Project Policy
+
+OctGearは個人プロジェクトとして管理しています。IssueやPull Requestは送信できますが、確認、返信、レビュー、マージ、対応時期は保証しません。対応まで長期間かかる場合や、対応しない場合があります。必要に応じてForkし、各Forkで管理してください。
+
+## License
+
+Copyright 2026 falxala
+
+Software and software documentation are licensed under the [Apache License 2.0](LICENSE).
+
+`hardware/`以下のhardware design materialsは[OctGear Hardware License 1.0](HARDWARE-LICENSE.md)の対象です。個人による非商用の自作は許可されますが、基準となるハードウェア構成を実質的に変更せず製造・販売することは禁止されています。このため、リポジトリ全体をOSI準拠のオープンソースとして提供するものではありません。
+
+名称、ロゴ、公式性の表示については[Trademark Policy](TRADEMARKS.md)を参照してください。
