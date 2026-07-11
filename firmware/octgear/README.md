@@ -10,7 +10,7 @@ RP2040 Arduino coreとAdafruit TinyUSBを使う、現行8キー + rotary encoder
 - LayerごとのRGB LED色を保存。`0,0,0`で消灯
 - Keyboard / Consumer Control HID output
 - WebHID vendor reportによる設定とDiagnostics
-- Flash-backed EEPROM emulationへのkeymap保存
+- 3-sector Flash journalへのkeymap保存
 - UF2 bootloaderへのreboot
 - Key 5 boot時のread-only README drive / Serial rescue
 - onboard LEDによるlayer、remapper、rescue状態表示
@@ -48,7 +48,9 @@ Generated headerは直接編集しません。Hardware profile変更後は`pnpm 
 
 ## Storage
 
-Keymap、layer enable mask、layer RGB colorsはRP2040 Arduino coreのEEPROM emulationを通してexternal SPI Flashへ保存します。起動時にstorageが無効ならcompile済みdefaultで初期化します。通常の変更は対象設定だけを保存します。
+Keymap、layer enable mask、layer RGB colorsはexternal SPI Flash上の独立した3つの4KB sectorへ循環保存します。各slotはgenerationとCRCを持ち、起動時はCRCが正常な最新generationを読み込みます。保存中に電源が切れて新slotが不完全になっても、直前の正常slotへfallbackします。
+
+標準buildはArduino coreがfilesystem用として扱う64KBをFirmware領域から分離して予約します。Filesystemはmountせず、その先頭12KBをjournalに直接使用します。設定変更時はRAM上の設定全体を次slotへ書き、1回の保存で消去するsectorを1つに限定します。保存形式が無効または未初期化ならcompile済みdefaultで初期化します。
 
 Diagnostics / Serial rescueのstorage self-testはtest patternのwrite、readback、元keymapのrestoreを行います。実Flashへ書くため、必要な検査時だけ実行します。
 

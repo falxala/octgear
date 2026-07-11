@@ -71,7 +71,7 @@ byte 3..31  response payload
 
 `DiagnosticReport` is a synchronous send/receive self-test for Diagnostics. The Web UI sends a fixed nonce and verifies that the firmware returns the `RPT` signature plus the same nonce.
 
-`DiagnosticStorage` writes a test pattern across the keymap storage area, reads it back, verifies it, and restores the original keymap. It is intended for production inspection of the same flash-backed storage used by normal remapping. Run it only when needed because it writes the external SPI Flash through EEPROM emulation.
+`DiagnosticStorage` writes a test pattern through the same three-slot Flash journal used by normal remapping, reads it back, verifies it, and restores the original keymap. Run it only when needed because the test and restore each consume a journal write.
 
 `enabledLayerMask`はbit indexをlayer indexとして使います。Bit 0は常に`1`です。`SetLayerEnabled`でLayer 0を無効にするrequestは`OutOfRange`になります。Active layerを無効にするとfirmwareはLayer 0へ戻ります。`SetLayer`とMomentary Layerは無効layerへ遷移せず、Layer Cycleは無効layerをskipします。
 

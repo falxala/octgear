@@ -54,7 +54,7 @@ hardware/octgear/profile.json
         ├─> apps/web/.../generatedHardwareConfig.ts
         └─> hardware/octgear/pinout.md
 
-Browser ── WebHID config report ──> RP2040 firmware ──> EEPROM emulation
+Browser ── WebHID config report ──> RP2040 firmware ──> 3-slot Flash journal
    │                                      │
    └─ Remapper / Diagnostics              └─ Keyboard / Consumer HID
 ```
