@@ -36,10 +36,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm --filter @cyborg-mini/web typecheck
+        run: pnpm --filter @octgear/web typecheck
 
       - name: Build
-        run: pnpm --filter @cyborg-mini/web exec vite build --mode github-pages
+        run: pnpm --filter @octgear/web exec vite build --mode github-pages
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
