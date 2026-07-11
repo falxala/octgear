@@ -121,7 +121,7 @@ export const ja = {
     keyboard: "キーボード",
     consumer: "メディア",
     layerCycle: "次レイヤー",
-    layerPrevious: "戻る",
+    layerPrevious: "前レイヤー",
     momentaryLayer: "一時レイヤー",
     usage: "Usage",
     targetLayer: "Target layer",
@@ -129,7 +129,7 @@ export const ja = {
     label: "Label",
     usageHex: "Usage hex",
     layerCycleLabel: "次レイヤー",
-    layerPreviousLabel: "戻る",
+    layerPreviousLabel: "前レイヤー",
     momentaryLayerLabel: (layer: number) => `押下中 L${layer}`,
   },
   palette: {

@@ -130,7 +130,7 @@
 }
 
 .keyboard-picker.us .picker-key.layout-accent {
-  --key-text: var(--accent-strong);
+  --key-text: #006f75;
 }
 
 .picker-key.active,
