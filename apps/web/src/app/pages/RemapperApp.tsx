@@ -26,6 +26,7 @@ import {
   previewDeviceLayerColor,
   readDeviceKeymap,
   readDeviceLayerColors,
+  resetDeviceConfiguration,
   sendRemapperHeartbeat,
   setDeviceLayer,
   setDeviceLayerEnabled,
@@ -71,6 +72,8 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   const [activeLayer, setActiveLayer] = useState(0);
   const [selectedKey, setSelectedKey] = useState(0);
   const [firmwareModalOpen, setFirmwareModalOpen] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [status, setStatus] = useState<string>(t.connection.initialStatus);
   const [firmwareStatus, setFirmwareStatus] = useState<string>(t.firmware.initialStatus);
   const [deviceState, setDeviceState] = useState<DeviceState | null>(null);
@@ -103,6 +106,21 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   }, [selectedAssignment]);
 
   useEffect(() => () => cancelScheduledColorPreview(), []);
+
+  useEffect(() => {
+    if (!resetModalOpen || resetting) {
+      return;
+    }
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setResetModalOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [resetModalOpen, resetting]);
 
   useEffect(() => {
     if (!connected || deviceKeyCount === 0) {
@@ -269,6 +287,45 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       ));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t.keymap.saveFailed);
+    }
+  }
+
+  async function resetConfiguration() {
+    if (!connected || !deviceState) {
+      setStatus(t.connection.deviceNotConnected);
+      return;
+    }
+
+    setResetting(true);
+    setStatus(t.keymap.resetting);
+    try {
+      await clearLayerColorPreview();
+      await resetDeviceConfiguration(transport);
+
+      const state = await getDeviceState(transport);
+      const loadedKeymap = await readDeviceKeymap(transport, state.layerCount, state.keyCount);
+      const loadedLayerColors = await readDeviceLayerColors(
+        transport,
+        state.layerCount,
+        HARDWARE_CONFIG.defaultLayerColors,
+      );
+      const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
+
+      setDeviceState(state);
+      setReadKeymap(uiKeymap);
+      setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
+      setReadEnabledLayers(state.enabledLayers);
+      setWriteEnabledLayers(state.enabledLayers);
+      setReadLayerColors(loadedLayerColors);
+      setWriteLayerColors(loadedLayerColors);
+      setActiveLayer(state.activeLayer);
+      setSelectedKey((current) => (current < state.keyCount ? current : 0));
+      setResetModalOpen(false);
+      setStatus(t.keymap.resetComplete);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t.keymap.resetFailed);
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -501,6 +558,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
           layerColors={writeLayerColors}
           layerAssignments={writeKeymap[activeLayer]}
           onRead={() => void readAllAssignments()}
+          onReset={() => setResetModalOpen(true)}
           onSave={() => void saveAllAssignments()}
           onSelectLayer={(layerIndex) => void selectLayer(layerIndex)}
           onLayerEnabledChange={updateLayerEnabled}
@@ -535,7 +593,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
         >
           <div
             className="modal-shell"
-            role="dialog"
+            role="alertdialog"
             aria-modal="true"
             aria-labelledby="firmware-modal-title"
             onClick={(event) => event.stopPropagation()}
@@ -562,6 +620,52 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
               onInstallFirmware={() => void installBundledFirmware()}
               onDownloadFirmware={() => void downloadBundledFirmware()}
             />
+          </div>
+        </div>
+      ) : null}
+
+      {resetModalOpen ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (!resetting) {
+              setResetModalOpen(false);
+            }
+          }}
+        >
+          <div
+            className="modal-shell reset-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-modal-title"
+            aria-describedby="reset-modal-description"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="panel-meta">
+              <span className="panel-kicker">{t.keymap.kicker}</span>
+              <h2 id="reset-modal-title">{t.keymap.resetTitle}</h2>
+            </div>
+            <p id="reset-modal-description">{t.keymap.resetDescription}</p>
+            <div className="reset-modal-actions">
+              <button
+                type="button"
+                className="ghost-button"
+                autoFocus
+                disabled={resetting}
+                onClick={() => setResetModalOpen(false)}
+              >
+                {t.keymap.resetCancel}
+              </button>
+              <button
+                type="button"
+                className="danger-action"
+                disabled={resetting}
+                onClick={() => void resetConfiguration()}
+              >
+                {resetting ? t.keymap.resetting : t.keymap.resetConfirm}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

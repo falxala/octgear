@@ -16,6 +16,7 @@ export enum ConfigCommand {
   GetLayerColor = 0x0b,
   SetLayerColor = 0x0c,
   PreviewLayerColor = 0x0d,
+  ResetConfiguration = 0x0e,
 }
 
 export enum ConfigStatus {

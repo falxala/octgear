@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { ConsumerKeycapSvg } from "./ConsumerKeycapSvg";
 import { HARDWARE_CONFIG } from "../../features/hardware/hardwareConfig";
 import { consumerOptionByUsage } from "../../features/keymap/keyPickerOptions";
@@ -15,6 +16,7 @@ type RemapPanelProps = {
   layerColors: LayerColor[];
   layerAssignments: KeyAssignment[];
   onRead: () => void;
+  onReset: () => void;
   onSave: () => void;
   onSelectLayer: (layerIndex: number) => void;
   onLayerEnabledChange: (layerIndex: number, enabled: boolean) => void;
@@ -32,17 +34,44 @@ export function RemapPanel({
   layerColors,
   layerAssignments,
   onRead,
+  onReset,
   onSave,
   onSelectLayer,
   onLayerEnabledChange,
   onLayerColorChange,
   onSelectKey,
 }: RemapPanelProps) {
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const controls = HARDWARE_CONFIG.controls.slice(0, layerAssignments.length);
   const keyControls = controls.filter((control) => control.kind === "key");
   const encoderControls = controls.filter((control) => control.kind !== "key");
   const activeLayerColor = layerColors[activeLayer] ?? { red: 0, green: 0, blue: 0 };
   const layerLedOn = activeLayerColor.red !== 0 || activeLayerColor.green !== 0 || activeLayerColor.blue !== 0;
+
+  useEffect(() => {
+    if (!actionsOpen) {
+      return;
+    }
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActionsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [actionsOpen]);
 
   return (
     <section className="panel remap-panel">
@@ -52,6 +81,35 @@ export function RemapPanel({
           <h2>{t.keymap.title}</h2>
         </div>
         <div className="remap-actions">
+          <div className="overflow-menu" ref={actionsRef}>
+            <button
+              type="button"
+              className="overflow-menu-trigger"
+              aria-label={t.keymap.moreActions}
+              aria-expanded={actionsOpen}
+              aria-haspopup="menu"
+              disabled={!connected}
+              title={t.keymap.moreActions}
+              onClick={() => setActionsOpen((open) => !open)}
+            >
+              <span aria-hidden="true">&#8942;</span>
+            </button>
+            {actionsOpen ? (
+              <div className="overflow-menu-popover" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={!connected}
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onReset();
+                  }}
+                >
+                  {t.keymap.reset}
+                </button>
+              </div>
+            ) : null}
+          </div>
           <button type="button" onClick={onRead} disabled={!connected}>
             {t.keymap.read}
           </button>

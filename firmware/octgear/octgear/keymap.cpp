@@ -13,7 +13,6 @@ LayerColor currentLayerColors[Config::LAYER_COUNT];
 KeyAssignment keymap[Config::LAYER_COUNT][Config::KEY_COUNT];
 
 void setDefaultLayer0() {
-  keymap[0][0] = layerCycleAssignment();
   keymap[0][1] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_INCREMENT);
   keymap[0][2] = consumerAssignment(HID_USAGE_CONSUMER_VOLUME_DECREMENT);
   keymap[0][3] = consumerAssignment(HID_USAGE_CONSUMER_MUTE);
@@ -53,6 +52,10 @@ void setDefaultKeymap() {
   setDefaultLayer0();
   setDefaultLayer1();
   setDefaultLayer2();
+
+  for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    keymap[layer][0] = layerCycleAssignment();
+  }
 }
 
 }  // namespace
@@ -66,14 +69,19 @@ void clearKeymap() {
 }
 
 void beginKeymap() {
-  resetLayerColors();
-  setDefaultKeymap();
+  resetKeymapToDefaults();
   beginKeymapStorage();
 
   if (!loadKeymapFromStorage()) {
-    setDefaultKeymap();
     saveKeymapToStorage();
   }
+}
+
+void resetKeymapToDefaults() {
+  currentLayer = 0;
+  currentEnabledLayerMask = Config::DEFAULT_ENABLED_LAYER_MASK;
+  resetLayerColors();
+  setDefaultKeymap();
 }
 
 LayerColor layerColor(uint8_t layer) {

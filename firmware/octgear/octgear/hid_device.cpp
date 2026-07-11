@@ -195,6 +195,19 @@ void handlePreviewLayerColor(const uint8_t* buffer, uint16_t size) {
   sendConfigResponse(ConfigCommand::PreviewLayerColor, ConfigStatus::Ok, payload, sizeof(payload));
 }
 
+void handleResetConfiguration() {
+  resetKeymapToDefaults();
+  clearStatusLedPreview();
+
+  if (!saveKeymapToStorage()) {
+    sendConfigResponse(ConfigCommand::ResetConfiguration, ConfigStatus::StorageError, nullptr, 0);
+    return;
+  }
+
+  const uint8_t payload[] = { activeLayer(), enabledLayerMask() };
+  sendConfigResponse(ConfigCommand::ResetConfiguration, ConfigStatus::Ok, payload, sizeof(payload));
+}
+
 void handleGetKey(const uint8_t* buffer, uint16_t size) {
   if (size < 3) {
     sendConfigResponse(ConfigCommand::GetKey, ConfigStatus::InvalidLength, nullptr, 0);
@@ -378,6 +391,9 @@ void setReportCallback(uint8_t reportId, hid_report_type_t reportType, uint8_t c
       break;
     case ConfigCommand::PreviewLayerColor:
       handlePreviewLayerColor(buffer, size);
+      break;
+    case ConfigCommand::ResetConfiguration:
+      handleResetConfiguration();
       break;
     default:
       sendConfigResponse(command, ConfigStatus::UnknownCommand, nullptr, 0);

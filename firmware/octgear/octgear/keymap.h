@@ -11,6 +11,7 @@ struct LayerColor {
 };
 
 void beginKeymap();
+void resetKeymapToDefaults();
 uint8_t activeLayer();
 void setActiveLayer(uint8_t layer);
 uint8_t enabledLayerMask();

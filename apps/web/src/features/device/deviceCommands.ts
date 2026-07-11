@@ -154,6 +154,11 @@ export async function clearDeviceLayerColorPreview(transport: WebHidTransport) {
   assertConfigOk(response);
 }
 
+export async function resetDeviceConfiguration(transport: WebHidTransport) {
+  const response = await sendCommand(transport, ConfigCommand.ResetConfiguration);
+  assertConfigOk(response);
+}
+
 export async function getDeviceKey(transport: WebHidTransport, layer: number, keyIndex: number) {
   const response = await sendCommand(transport, ConfigCommand.GetKey, [layer, keyIndex]);
   assertConfigOk(response);
