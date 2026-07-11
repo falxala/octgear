@@ -1,20 +1,41 @@
 # OctGear Hardware
 
-現行8キー + ロータリーエンコーダ版ハードウェア資料です。
+現行8キー + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control / pin mappingを管理します。
 
-## 前提
+## Files
 
-- 8本のDirect入力ピンを使う
-- ロータリーエンコーダはA/B相 + SWの3ピンを使う
-- 仮想GND用GPIOは2本
-- 仮想GND用GPIOはファームウェア側で `OUTPUT LOW`
-- 外付けRGB LED / OLED は廃止
-- LED表示は本体LEDのみ
-- Key 5を押しながらUSB接続すると、README driveとSerial rescueをその起動だけ表示
+| File | Ownership |
+| --- | --- |
+| `profile.json` | 手動編集するsingle source of truth |
+| `pinout.md` | profileから生成する人向けpin table |
 
-## Documents
+同じprofileから次も生成します。
 
-- `profile.json`: ピン割り当てとWeb表示用metadataの単一ソース
-- `pinout.md`: 現行ピン割り当て
+- `firmware/octgear/octgear/generated_hardware_config.h`
+- `apps/web/src/features/hardware/generatedHardwareConfig.ts`
 
-`pinout.md`、firmware用 `generated_hardware_config.h`、Web用 `generatedHardwareConfig.ts` は `pnpm hardware:generate` で生成します。
+## Change Workflow
+
+1. `profile.json`を編集します。
+2. Repository rootで`pnpm hardware:generate`を実行します。
+3. 3つの生成物のdiffを確認します。
+4. Webとfirmwareをbuildします。
+
+```sh
+pnpm hardware:generate
+pnpm build
+pnpm firmware:build
+```
+
+Generated filesは直接編集しません。Generatorはindex順とencoder control IDを検証し、不整合時は失敗します。
+
+## Electrical Assumptions
+
+- 8 Direct inputは`INPUT_PULLUP`で、press時にLOW
+- VGND1 / VGND2はfirmwareが常時`OUTPUT LOW`に設定
+- EncoderはA/B quadratureとpull-upされたswitch input
+- External RGB LED / OLEDは使用しない
+- Status表示はboard onboard LEDのみ
+- Key 5は通常inputとrescue boot triggerを兼用
+
+現在のGPIOとfirmware indexは[`pinout.md`](pinout.md)を参照してください。Data flowと影響範囲は[`docs/architecture.md`](../../docs/architecture.md)にあります。

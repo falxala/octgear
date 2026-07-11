@@ -1,144 +1,101 @@
 # OctGear
 
-RP2040 Zero / 互換ボードを使う8キー + ロータリーエンコーダ小型キーボードと、WebHIDベースの設定ツールです。
+RP2040 Zero / compatible boardで動く、8キー + ロータリーエンコーダの小型キーボードです。通常のKeyboard / Consumer Control HIDに加え、WebHIDベースのRemapper、製造検査、ブラウザからのファームウェア更新を提供します。
 
-## Current State
+## Features
 
-- 8キー Direct input + rotary encoder A/B/SW
-- 6 layers x 11 controls のキーマップ
-- Keyboard / Consumer Control HID output
-- WebHID Remapper
-- Diagnostics for production inspection
-- Browser-based firmware updater / bundled UF2 download
-- Key 5 boot serial rescue for offline recovery
-- GitHub Pages deployment from `main`
+- 8個のDirect inputと、ロータリーエンコーダのCCW / CW / SW
+- 6 layers x 11 controlsのキーマップ
+- Keyboard、Consumer Control、Layer Cycle、Momentary Layer割り当て
+- WebHID Remapperによる読込、編集、差分保存
+- 物理入力、設定report、Flash保存領域のDiagnostics
+- WebHIDからのBOOTSEL移行と、同梱UF2の更新
+- Key 5起動によるREADME drive / Serial rescue
 
-## Pages
+## Web Pages
 
-Vite multi-page buildで以下を出力します。
-
-| Page | Path | Purpose |
+| Page | Path | Role |
 | --- | --- | --- |
-| Home | `/` | 製品ページと入口 |
-| Remapper | `/remapper.html` | キーマップ読込、編集、保存、ファームウェア更新 |
-| Diagnostics | `/diagnostics.html` | 出荷前/販売前の個体検査 |
+| Home | `/` | 製品情報と各ツールへの入口 |
+| Remapper | `/remapper.html` | キーマップ設定とファームウェア更新 |
+| Diagnostics | `/diagnostics.html` | 出荷前・販売前の個体検査 |
 
-Remapper / Diagnostics は別HTMLとして直接開けます。ブランドクリックはHomeへ戻ります。
+RemapperとDiagnosticsは独立したHTMLとして直接開けます。WebHIDを使うため、対応ブラウザかつsecure contextで実行してください。通常はChromium系ブラウザのHTTPS配信またはlocalhostを想定しています。
+
+## Quick Start
+
+開発環境を初期化します。Arduino CLI、RP2040 core、Arduino librariesはリポジトリ内の`.tools/`と`.arduino/`へ導入されます。
+
+```sh
+scripts/setup-dev-env.sh
+pnpm dev
+```
+
+主な検証・生成コマンド:
+
+```sh
+pnpm typecheck          # Web TypeScript
+pnpm build              # Web production build
+pnpm firmware:build     # Firmware compile
+pnpm firmware:web       # Firmware compile + 配信用UF2/RESCUE.CMD更新
+pnpm hardware:generate  # Hardware profileから3つの生成物を更新
+```
+
+初回セットアップと全ビルドをまとめて確認する場合は`scripts/setup-dev-env.sh --verify`を使います。
+
+## Architecture
+
+```text
+hardware/octgear/profile.json
+        │
+        ├─> firmware/.../generated_hardware_config.h
+        ├─> apps/web/.../generatedHardwareConfig.ts
+        └─> hardware/octgear/pinout.md
+
+Browser ── WebHID config report ──> RP2040 firmware ──> EEPROM emulation
+   │                                      │
+   └─ Remapper / Diagnostics              └─ Keyboard / Consumer HID
+```
+
+`hardware/octgear/profile.json`がピン割り当て、コントロール順、レイヤー数の単一ソースです。生成ファイルは直接編集せず、profile変更後に`pnpm hardware:generate`を実行します。Firmware buildでも生成処理は自動実行されます。
+
+詳しいモジュール境界とデータフローは[Architecture](docs/architecture.md)を参照してください。
 
 ## Repository Layout
 
 ```text
-apps/web/                       React + TypeScript + Vite web app
-firmware/octgear/      RP2040 firmware
-hardware/octgear/      現行8キー + エンコーダ版ハードウェアメモ
-docs/hid-report.md              WebHID config report protocol
-scripts/                        Arduino CLI wrapper / firmware build scripts
+apps/web/                  React + TypeScript + Vite multi-page app
+docs/                      横断仕様、開発、運用手順
+firmware/octgear/          RP2040 Arduino firmware
+hardware/octgear/          Hardware profileと生成pinout
+scripts/                   環境構築、生成、firmware build
 ```
-
-Hardware pinout and UI-facing control metadata are sourced from `hardware/octgear/profile.json`.
-Run `pnpm hardware:generate` after editing it, or use the firmware build scripts which run generation automatically.
 
 ## Hardware Summary
 
-現在のピンマップは `hardware/octgear/profile.json` を正とします。詳細表は `hardware/octgear/pinout.md` に生成します。
+現行構成は8本の`INPUT_PULLUP`、2本の`OUTPUT LOW`仮想GND、A/B/SWの3ピンエンコーダです。正確なGPIOは生成された[pinout](hardware/octgear/pinout.md)を参照してください。
 
-Key 5を押しながらUSB接続すると、Read-only README driveとSerial rescueをその起動だけ表示します。通常は非表示です。Windowsではドライブ内の `RESCUE.CMD` から対話式の救済プロンプトを開けます。このモード中は本体LEDを弱い緑で点灯します。
-
-## Firmware
-
-Sketch:
-
-```text
-firmware/octgear/octgear/
-```
-
-主な実装:
-
-- `key_scanner.*`: 8本Direct入力 + エンコーダA/B/SW + 2本仮想GND
-- `keymap.*`: RAM上の6 layer x 11 control assignment
-- `keymap_storage.*`: Flash-backed EEPROM emulationへの永続化
-- `hid_device.*`: Keyboard / Consumer / vendor config report
-- `hid_output_queue.*`: Keyboard / Consumer HID input report retry queue
-- `readme_drive.*`: Key 5起動時だけ表示するRead-only drive
-- `serial_rescue.*`: Key 5起動時だけ有効な対話式Serial救済コマンド
-- `status_led.*`: 本体LED状態表示
-
-Firmware buildはRP2040 Arduino coreの `waveshare_rp2040_zero` を使い、CPU clockを `125 MHz` に固定します。
-
-```sh
-pnpm firmware:build
-pnpm firmware:web
-```
-
-`pnpm firmware:web` は `apps/web/public/firmware/octgear.uf2` も更新します。
-
-## Diagnostics
-
-Diagnosticsは全個体検査向けです。
-
-- WebHID support
-- Device connection
-- Physical key / encoder input event
-- Diagnostic HID report send/receive
-- Keymap storage write/read/restore
-- Firmware-reported key count
-
-Storage testは実際のFlash-backed keymap保存領域へ書き込みます。出荷検査など必要な時だけ実行してください。検査はテストパターンを書き、再読込検証後に元のキーマップを復元します。
-
-## Development
-
-初回は `scripts/setup-dev-env.sh` で、Web依存関係、Arduino CLI、RP2040 core、ファームウェア用Arduino librariesをローカルの `.tools/` / `.arduino/` に導入します。セットアップ後に検証まで行う場合は `scripts/setup-dev-env.sh --verify` を使います。
-
-```sh
-scripts/setup-dev-env.sh
-```
-
-通常の開発コマンド:
-
-```sh
-pnpm dev
-pnpm typecheck
-pnpm build
-pnpm firmware:build
-pnpm firmware:web
-```
-
-`pnpm firmware:web` は配信用UF2に加えて、Windows offline rescue用の `apps/web/public/firmware/RESCUE.CMD` も更新します。
-
-## Deployment
-
-GitHub Pages deploy workflowは `main` へのpush、または手動実行で動きます。PR / feature branchではPages deployを走らせません。
-
-The workflow uses Node.js 24 and builds `apps/web/dist`.
+Key 5を押しながらUSB接続すると、その起動だけread-onlyの`OCTGEAR`ドライブとSerial rescueが有効になります。通常起動では表示されません。詳しい復旧手順は[Operations](docs/operations.md)にあります。
 
 ## USB Identity
 
-Default firmware identity:
-
-| Field | Value |
+| Field | Default |
 | --- | --- |
 | Vendor ID | `0xCAFE` |
 | Product ID | `0xC608` |
 | Manufacturer | `OctGear` |
 | Product | `OctGear` |
 
-`0xCAFE` is used as the project-local development/vendor ID. Keep project PIDs under the `0xC6xx` range to avoid accidental reuse inside this repository.
+`0xCAFE`はproject-localな開発用VIDです。商用・広範囲な配布では、割り当て済みVID/PID、許可されたsublicense、またはpid.codes等で取得したPIDへ置き換えてください。Web側の接続filterは`apps/web/src/features/device/usbIdentity.ts`で管理します。
 
-Reserved project PIDs:
+## Documentation
 
-| PID | Use |
+| Document | 内容 |
 | --- | --- |
-| `0xC608` | OctGear normal firmware |
-| `0xC609` | Reserved for rescue-mode identity if split from normal firmware |
-
-For broader commercial distribution, replace this with an assigned VID/PID, a permitted vendor sublicense, or an allocated pid.codes PID.
-
-WebHID filter is managed in `apps/web/src/features/device/usbIdentity.ts`.
-
-## Reference
-
-- HID protocol: `docs/hid-report.md`
-- Web app notes: `apps/web/README.md`
-- Firmware notes: `firmware/octgear/README.md`
-- Sketch notes: `firmware/octgear/octgear/README.md`
-- Hardware pinout: `hardware/octgear/pinout.md`
+| [Architecture](docs/architecture.md) | システム構成、責務、実行時データフロー |
+| [Development](docs/development.md) | 環境構築、コマンド、変更別ワークフロー |
+| [Operations](docs/operations.md) | Remapper、更新、Diagnostics、Serial rescue |
+| [HID Report Protocol](docs/hid-report.md) | WebHID vendor reportのwire format |
+| [Web App](apps/web/README.md) | Webアプリ内部の構成 |
+| [Firmware](firmware/octgear/README.md) | Firmwareの構成とbuild |
+| [Hardware](hardware/octgear/README.md) | Hardware profileと生成物 |

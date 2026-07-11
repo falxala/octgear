@@ -1,49 +1,58 @@
 # OctGear Firmware
 
-現行8キー + ロータリーエンコーダ版のRP2040ファームウェアです。
+RP2040 Arduino coreとAdafruit TinyUSBを使う、現行8キー + rotary encoder版firmwareです。Sketch本体は[`octgear/`](octgear/)にあります。
 
-Arduinoスケッチ本体は `octgear/` にあります。
+## Responsibilities
 
-## Current Scope
+- 8 Direct inputとencoder A/B/SWのscan
+- 6 layers x 11 controlsのkeymap解決
+- Keyboard / Consumer Control HID output
+- WebHID vendor reportによる設定とDiagnostics
+- Flash-backed EEPROM emulationへのkeymap保存
+- UF2 bootloaderへのreboot
+- Key 5 boot時のread-only README drive / Serial rescue
+- onboard LEDによるlayer、remapper、rescue状態表示
 
-- 物理キーは8キー
-- ロータリーエンコーダはA/B相 + SWの3ピン
-- 外付けRGB LED / OLED は使わない
-- 表示は本体LEDのみ。通常のキーボード接続時はレイヤー別固定色、Remapper接続中だけカラーホイールで状態を示す
-- 設定通信はSerialではなくUSB HID / WebHID用reportを使う
-- USB identity は開発用の `0xCAFE:0xC608` を使う
-- WebHIDからUF2ブートローダへ入る更新用reportを持つ
-- Remapper接続中は通常のKeyboard / Consumer送信を止める
-- Key 5起動時だけ、オフライン救済用の対話式Serialコマンドを有効にする
-- Serial rescue / README drive起動中は本体LEDを弱い緑で点灯する
-- Diagnostics用のHID report送受信検査とstorage write/read/restore検査を持つ
-
-## キースキャン
-
-- `keyPins[8]` を `INPUT_PULLUP` として読む
-- `virtualGroundPins[2]` は常時 `OUTPUT LOW`
-- 押下時はDirect入力が `LOW`
-- 8キー + エンコーダ3操作の状態は16bitビットマスクで扱う
-- マトリクススキャンは行わない
+通常時は低遅延scanを行い、Remapper / Diagnostics heartbeat中は通常HID出力を抑止します。Rescue boot中も通常HID出力は行いません。
 
 ## Build
 
-リポジトリルートから実行します。
+Repository rootから実行します。
 
 ```sh
 pnpm firmware:build
 pnpm firmware:web
 ```
 
-既定のFQBNは `rp2040:rp2040:waveshare_rp2040_zero` です。`usbstack=tinyusb,freq=125` を指定し、CPU clockを125MHzに固定します。
+既定FQBNは`rp2040:rp2040:waveshare_rp2040_zero`、board optionsは`usbstack=tinyusb,freq=125`です。`pnpm firmware:web`は配信用の次のassetsも更新します。
 
-`pnpm firmware:web` はWeb配信用の `apps/web/public/firmware/octgear.uf2` を更新します。
-同時に、Windows offline rescue用の `apps/web/public/firmware/RESCUE.CMD` も出力します。
+```text
+apps/web/public/firmware/octgear.uf2
+apps/web/public/firmware/RESCUE.CMD
+```
 
-`octgear/rescue.cmd` を変更した場合は、ファームウェアビルド時に `octgear/rescue_cmd_asset.h` が再生成されます。手動で生成だけ行う場合は、リポジトリルートで `pnpm rescue-cmd:assets` を実行します。
+Build scriptsはhardware configとrescue command assetをcompile前に再生成します。環境構築、identity override、検証手順は[`docs/development.md`](../../docs/development.md)を参照してください。
+
+## Configuration
+
+| Configuration | Source |
+| --- | --- |
+| GPIO、control / layer count、encoder tuning | `hardware/octgear/profile.json` |
+| debounce、scan sleep、LED、heartbeat、rescue toggle | `octgear/config.h` |
+| USB identity defaults | `scripts/compile-firmware.sh`, `scripts/build-web-firmware.sh` |
+| HID command IDs / status | `octgear/hid_reports.h` |
+
+Generated headerは直接編集しません。Hardware profile変更後は`pnpm hardware:generate`を実行します。
 
 ## Storage
 
-キーマップはRP2040 Arduino coreのEEPROMエミュレーションに保存します。実体は外付けSPI Flashです。
+KeymapはRP2040 Arduino coreのEEPROM emulationを通してexternal SPI Flashへ保存します。起動時にstorageが無効ならcompile済みdefault keymapで初期化します。通常の変更はassignment単位で保存されます。
 
-通常運用ではSave時だけ書き込みます。DiagnosticsのStorage testも実際の保存領域へ書きます。全個体検査で必要な回数だけ実行してください。
+Diagnostics / Serial rescueのstorage self-testはtest patternのwrite、readback、元keymapのrestoreを行います。実Flashへ書くため、必要な検査時だけ実行します。
+
+## Further Reading
+
+- [Firmware module map](octgear/README.md)
+- [Architecture](../../docs/architecture.md)
+- [HID report protocol](../../docs/hid-report.md)
+- [Update, diagnostics, and rescue](../../docs/operations.md)

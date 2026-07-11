@@ -1,6 +1,6 @@
 # HID Report Protocol
 
-WebHID版リマッパーで使う固定長の設定用reportです。
+WebHID版Remapper / Diagnosticsで使う固定長の設定用reportです。この文書はfirmwareの`hid_reports.h` / `hid_device.cpp`とWebの`hidProtocol.ts` / `deviceCommands.ts`の境界仕様です。
 
 通常のキーボード/Consumer Control HID reportとは別に、vendor-defined reportを1つ持ちます。
 
@@ -14,6 +14,8 @@ WebHID版リマッパーで使う固定長の設定用reportです。
 | Size | `32 bytes` |
 
 WebHIDの `sendReport(reportId, data)` では、`reportId` は引数で渡すため、`data[0]` はcommandです。
+
+Multi-byte integerはlittle-endianです。未使用byteは送信側で`0`にし、受信側はpayload lengthの範囲だけを解釈します。
 
 ## Request Layout
 
@@ -56,6 +58,8 @@ byte 3..31  response payload
 | `0x08` | `DiagnosticReport` | `0x43, 0x59, 0x42, 0x38` | `0x52, 0x50, 0x54, version, echoed request bytes[4]` |
 | `0x09` | `DiagnosticStorage` | none | `ok, layerCount, keyCount` |
 
+通常の同期commandは、requestと同じcommandをbyte 0に持つresponseを1つ返します。`RemapperHeartbeat`と`EnterBootloader`は例外です。Heartbeatは応答を返さず、bootloader commandはdeviceが再起動するためresponseを待ちません。
+
 `KeyEvent` is an asynchronous device-to-Web input report. The firmware emits it when a physical key, encoder rotation, or encoder switch press is detected while the remapper heartbeat is active, so the UI can select the matching tile.
 
 `RemapperHeartbeat` is sent periodically by Remapper and Diagnostics. While the heartbeat is active, normal keyboard / consumer output is suppressed by firmware.
@@ -63,6 +67,14 @@ byte 3..31  response payload
 `DiagnosticReport` is a synchronous send/receive self-test for Diagnostics. The Web UI sends a fixed nonce and verifies that the firmware returns the `RPT` signature plus the same nonce.
 
 `DiagnosticStorage` writes a test pattern across the keymap storage area, reads it back, verifies it, and restores the original keymap. It is intended for production inspection of the same flash-backed storage used by normal remapping. Run it only when needed because it writes the external SPI Flash through EEPROM emulation.
+
+## Session Lifecycle
+
+Webは接続直後に`RemapperHeartbeat`を送り、`GetState`、全`GetKey`の順にdevice stateを読みます。その後は300 ms間隔でheartbeatを送ります。Firmwareは最後のheartbeatから3000 ms以内をremapper activeとみなし、その間は通常のKeyboard / Consumer outputを抑止して`KeyEvent`を有効にします。
+
+Web transportは同期requestごとに同じcommand byteのresponseを待ち、既定1000 msでtimeoutします。同じcommandを含む複数requestを並列化するとresponseを識別できないため、commandは逐次送信します。現在のprotocolにtransaction IDはありません。
+
+Physical disconnectまたはheartbeat failure時、WebはHID deviceをcloseして未接続状態へ戻ります。Heartbeatが止まったfirmwareはtimeout後に通常HID outputへ戻ります。
 
 ## Key Indexes
 
@@ -92,6 +104,8 @@ byte 12     target layer
 
 `target layer` is used when `kind` is `MomentaryLayer`; otherwise it is `0`.
 
+Keyboard assignmentはmodifier bitmapと6-key rollover slotsを使用します。Consumer usageとtarget layerはkindに応じてnormalizeされ、使用しないfieldは`0`です。
+
 `kind` values:
 
 | Value | Name |
@@ -101,3 +115,21 @@ byte 12     target layer
 | `2` | Consumer |
 | `3` | LayerCycle |
 | `4` | MomentaryLayer |
+
+## Compatibility Rules
+
+- Webは`GetState`が返す`layerCount`と`keyCount`をdeviceの書込可能範囲として使います。
+- 未知のassignment kindやstatusを追加する場合は、firmwareとWebのdecode / validationを同時に更新します。
+- Command ID、payload offset、status valueはwire compatibilityです。再利用せず、新しい値を追加します。
+- Report sizeまたはReport IDを変更する場合はTinyUSB descriptor、firmware buffer、Web codecを同時に変更します。
+- Storage formatはこのwire protocolとは別契約です。Protocol互換でもfirmwareのstorage migrationが必要になる場合があります。
+
+## Implementation References
+
+| Side | Files |
+| --- | --- |
+| Firmware enums / descriptor | `firmware/octgear/octgear/hid_reports.h`, `hid_report_descriptor.cpp` |
+| Firmware command handling | `firmware/octgear/octgear/hid_device.cpp` |
+| Web report codec | `apps/web/src/features/device/hidProtocol.ts` |
+| Web command API | `apps/web/src/features/device/deviceCommands.ts` |
+| Web transport / timeout | `apps/web/src/features/device/webHidTransport.ts` |
