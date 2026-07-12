@@ -24,6 +24,7 @@ enum class ConfigCommand : uint8_t {
   SetLayerColor = 0x0C,
   PreviewLayerColor = 0x0D,
   ResetConfiguration = 0x0E,
+  SetEncoderReversed = 0x0F,
 };
 
 enum class ConfigStatus : uint8_t {

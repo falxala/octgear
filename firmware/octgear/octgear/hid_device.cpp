@@ -69,6 +69,7 @@ void handleGetState() {
     Config::KEY_COUNT,
     Config::MATRIX_ROW_COUNT,
     enabledLayerMask(),
+    static_cast<uint8_t>(encoderReversed() ? 1 : 0),
   };
 
   sendConfigResponse(ConfigCommand::GetState, ConfigStatus::Ok, payload, sizeof(payload));
@@ -198,6 +199,25 @@ void handleResetConfiguration() {
 
   const uint8_t payload[] = { activeLayer(), enabledLayerMask() };
   sendConfigResponse(ConfigCommand::ResetConfiguration, ConfigStatus::Ok, payload, sizeof(payload));
+}
+
+void handleSetEncoderReversed(const uint8_t* buffer, uint16_t size) {
+  if (size < 2) {
+    sendConfigResponse(ConfigCommand::SetEncoderReversed, ConfigStatus::InvalidLength, nullptr, 0);
+    return;
+  }
+
+  const bool previous = encoderReversed();
+  const bool reversed = buffer[1] != 0;
+  setEncoderReversed(reversed);
+  if (!saveEncoderReversedToStorage()) {
+    setEncoderReversed(previous);
+    sendConfigResponse(ConfigCommand::SetEncoderReversed, ConfigStatus::StorageError, nullptr, 0);
+    return;
+  }
+
+  const uint8_t payload[] = { static_cast<uint8_t>(reversed ? 1 : 0) };
+  sendConfigResponse(ConfigCommand::SetEncoderReversed, ConfigStatus::Ok, payload, sizeof(payload));
 }
 
 void handleGetKey(const uint8_t* buffer, uint16_t size) {
@@ -390,6 +410,9 @@ void setReportCallback(uint8_t reportId, hid_report_type_t reportType, uint8_t c
       break;
     case ConfigCommand::ResetConfiguration:
       handleResetConfiguration();
+      break;
+    case ConfigCommand::SetEncoderReversed:
+      handleSetEncoderReversed(buffer, size);
       break;
     default:
       sendConfigResponse(command, ConfigStatus::UnknownCommand, nullptr, 0);

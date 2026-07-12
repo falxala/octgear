@@ -49,6 +49,6 @@ constexpr uint8_t ENCODER_CCW_KEY_INDEX = 8;
 constexpr uint8_t ENCODER_CW_KEY_INDEX = 9;
 constexpr uint8_t ENCODER_SWITCH_KEY_INDEX = 10;
 constexpr int8_t ENCODER_STEPS_PER_DETENT = 2;
-constexpr bool ENCODER_REVERSED = false;
+constexpr bool ENCODER_REVERSED = true;
 
 }  // namespace Config

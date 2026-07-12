@@ -37,6 +37,8 @@ Because the matrix has no diodes, rectangular multi-key combinations are electri
 
 Encoder A/B and SW are independent from the key matrix. A/B/SW use `INPUT_PULLUP`; Common is a dedicated `OUTPUT LOW` on GPIO 12.
 
+The compiled default direction is reversed. Remapper can change and persist the direction without rebuilding firmware.
+
 | Signal | GPIO | Firmware control index |
 | --- | ---: | ---: |
 | A | 13 | CCW/CW: 8/9 |

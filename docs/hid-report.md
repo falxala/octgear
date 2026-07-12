@@ -48,7 +48,7 @@ byte 3..31  response payload
 
 | Value | Name | Request payload | Response payload |
 | ---: | --- | --- | --- |
-| `0x01` | `GetState` | none | `activeLayer, layerCount, keyCount, matrixRowCount, enabledLayerMask` |
+| `0x01` | `GetState` | none | `activeLayer, layerCount, keyCount, matrixRowCount, enabledLayerMask, encoderReversed` |
 | `0x02` | `SetLayer` | `layer` | `layer` |
 | `0x03` | `GetKey` | `layer, keyIndex` | key assignment payload |
 | `0x04` | `SetKey` | key assignment payload | `layer, keyIndex` |
@@ -62,6 +62,7 @@ byte 3..31  response payload
 | `0x0c` | `SetLayerColor` | `layer, red, green, blue` | `layer, red, green, blue` |
 | `0x0d` | `PreviewLayerColor` | `layer, red, green, blue` or none | previewed values or none |
 | `0x0e` | `ResetConfiguration` | none | `activeLayer, enabledLayerMask` |
+| `0x0f` | `SetEncoderReversed` | `reversed` | `reversed` |
 
 通常の同期commandは、requestと同じcommandをbyte 0に持つresponseを1つ返します。`RemapperHeartbeat`と`EnterBootloader`は例外です。Heartbeatは応答を返さず、bootloader commandはdeviceが再起動するためresponseを待ちません。
 
@@ -81,7 +82,9 @@ Layer colorの各channelは`0-255`です。RGBがすべて`0`の場合、通常m
 
 `PreviewLayerColor`はFlashやRAM上のlayer設定を変更せず、Remapper接続中のLED表示だけを一時的に上書きします。Payloadなしのrequest、`SetLayer`、または成功した`SetLayerColor`でpreviewを解除します。Heartbeatが途切れた場合も通常のactive layer表示へ戻ります。
 
-`ResetConfiguration`は全assignment、layer有効mask、layer RGB色をcompile済みの既定値へ戻し、保存領域全体へ書き込みます。Active layerはLayer 0へ戻ります。
+`encoderReversed`と`reversed`は`0`がprofileの配線どおり、`1`がA/Bの回転eventを反転した状態です。`SetEncoderReversed`は変更をFlashへ即座に保存します。
+
+`ResetConfiguration`は全assignment、layer有効mask、layer RGB色、Encoder方向をcompile済みの既定値へ戻し、保存領域全体へ書き込みます。Active layerはLayer 0へ戻ります。
 
 ## Session Lifecycle
 

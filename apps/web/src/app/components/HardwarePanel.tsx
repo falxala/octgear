@@ -5,9 +5,15 @@ import { t } from "../../shared/i18n";
 
 type HardwarePanelProps = {
   deviceState: DeviceState | null;
+  encoderDirectionUpdating: boolean;
+  onEncoderReversedChange: (reversed: boolean) => void;
 };
 
-export function HardwarePanel({ deviceState }: HardwarePanelProps) {
+export function HardwarePanel({
+  deviceState,
+  encoderDirectionUpdating,
+  onEncoderReversedChange,
+}: HardwarePanelProps) {
   return (
     <aside className="panel hardware-panel">
       <div className="panel-meta">
@@ -22,6 +28,20 @@ export function HardwarePanel({ deviceState }: HardwarePanelProps) {
         <div>
           <dt>{t.hardware.encoder}</dt>
           <dd>{t.hardware.encoderValue(HARDWARE_CONFIG.encoder.pinCount)}</dd>
+        </div>
+        <div>
+          <dt>{t.hardware.encoderDirection}</dt>
+          <dd>
+            <label className="hardware-toggle">
+              <input
+                type="checkbox"
+                checked={deviceState?.encoderReversed ?? HARDWARE_CONFIG.encoder.reversed}
+                disabled={!deviceState || encoderDirectionUpdating}
+                onChange={(event) => onEncoderReversedChange(event.target.checked)}
+              />
+              <span>{t.hardware.encoderReversed}</span>
+            </label>
+          </dd>
         </div>
         <div>
           <dt>{t.hardware.matrix}</dt>

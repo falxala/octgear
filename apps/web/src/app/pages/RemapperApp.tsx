@@ -29,6 +29,7 @@ import {
   resetDeviceConfiguration,
   sendRemapperHeartbeat,
   setDeviceLayer,
+  setDeviceEncoderReversed,
   setDeviceLayerEnabled,
   setDeviceLayerColor,
   setDeviceKey,
@@ -74,6 +75,7 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   const [firmwareModalOpen, setFirmwareModalOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [encoderDirectionUpdating, setEncoderDirectionUpdating] = useState(false);
   const [status, setStatus] = useState<string>(t.connection.initialStatus);
   const [firmwareStatus, setFirmwareStatus] = useState<string>(t.firmware.initialStatus);
   const [deviceState, setDeviceState] = useState<DeviceState | null>(null);
@@ -192,6 +194,24 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t.connection.layerChangeFailed);
+    }
+  }
+
+  async function updateEncoderReversed(reversed: boolean) {
+    if (!connected || !deviceState) {
+      setStatus(t.connection.deviceNotConnected);
+      return;
+    }
+
+    try {
+      setEncoderDirectionUpdating(true);
+      const saved = await setDeviceEncoderReversed(transport, reversed);
+      setDeviceState((current) => current ? { ...current, encoderReversed: saved } : current);
+      setStatus(t.hardware.encoderDirectionUpdated(saved));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t.hardware.encoderDirectionFailed);
+    } finally {
+      setEncoderDirectionUpdating(false);
     }
   }
 
@@ -547,7 +567,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       </header>
 
       <section className="workspace" aria-label={t.app.workspaceLabel}>
-        <HardwarePanel deviceState={deviceState} />
+        <HardwarePanel
+          deviceState={deviceState}
+          encoderDirectionUpdating={encoderDirectionUpdating}
+          onEncoderReversedChange={(reversed) => void updateEncoderReversed(reversed)}
+        />
         <RemapPanel
           activeLayer={activeLayer}
           selectedKey={selectedKey}

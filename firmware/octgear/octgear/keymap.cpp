@@ -9,6 +9,7 @@ uint8_t currentLayer = 0;
 static_assert(Config::LAYER_COUNT > 0 && Config::LAYER_COUNT <= 8, "Layer mask supports 1-8 layers");
 constexpr uint8_t ALL_LAYERS_ENABLED_MASK = static_cast<uint8_t>((1U << Config::LAYER_COUNT) - 1U);
 uint8_t currentEnabledLayerMask = Config::DEFAULT_ENABLED_LAYER_MASK;
+bool currentEncoderReversed = Config::ENCODER_REVERSED;
 LayerColor currentLayerColors[Config::LAYER_COUNT];
 KeyAssignment keymap[Config::LAYER_COUNT][Config::KEY_COUNT];
 
@@ -63,6 +64,7 @@ void beginKeymap() {
 void resetKeymapToDefaults() {
   currentLayer = 0;
   currentEnabledLayerMask = Config::DEFAULT_ENABLED_LAYER_MASK;
+  currentEncoderReversed = Config::ENCODER_REVERSED;
   resetLayerColors();
   setDefaultKeymap();
 }
@@ -92,6 +94,14 @@ void resetLayerColors() {
       Config::DEFAULT_LAYER_COLORS[layer][2],
     };
   }
+}
+
+bool encoderReversed() {
+  return currentEncoderReversed;
+}
+
+void setEncoderReversed(bool reversed) {
+  currentEncoderReversed = reversed;
 }
 
 uint8_t activeLayer() {

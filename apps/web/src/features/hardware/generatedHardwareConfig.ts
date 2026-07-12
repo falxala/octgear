@@ -34,6 +34,7 @@ export const HARDWARE_CONFIG = {
   encoder: {
     enabled: true,
     pinCount: 4,
+    reversed: true,
     controls: encoderControls,
   },
   keyPins: keyControls,

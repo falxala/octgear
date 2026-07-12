@@ -21,6 +21,8 @@ void setEnabledLayerMask(uint8_t mask);
 LayerColor layerColor(uint8_t layer);
 bool setLayerColor(uint8_t layer, const LayerColor& color);
 void resetLayerColors();
+bool encoderReversed();
+void setEncoderReversed(bool reversed);
 const KeyAssignment& assignmentFor(uint8_t layer, uint8_t keyIndex);
 bool setAssignment(uint8_t layer, uint8_t keyIndex, const KeyAssignment& assignment);
 void clearKeymap();

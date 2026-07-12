@@ -241,6 +241,7 @@ export const HARDWARE_CONFIG = {
   encoder: {
     enabled: ${profile.encoder.enabled ? "true" : "false"},
     pinCount: ${profile.encoder.pinCount},
+    reversed: ${profile.encoder.reversed ? "true" : "false"},
     controls: encoderControls,
   },
   keyPins: keyControls,
@@ -287,6 +288,8 @@ Because the matrix has no diodes, rectangular multi-key combinations are electri
 ## Rotary Encoder
 
 Encoder A/B and SW are independent from the key matrix. A/B/SW use \`INPUT_PULLUP\`; Common is a dedicated \`OUTPUT LOW\` on GPIO ${profile.encoder.commonPin}.
+
+The compiled default direction is ${profile.encoder.reversed ? "reversed" : "standard"}. Remapper can change and persist the direction without rebuilding firmware.
 
 | Signal | GPIO | Firmware control index |
 | --- | ---: | ---: |

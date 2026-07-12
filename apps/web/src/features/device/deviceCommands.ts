@@ -24,6 +24,7 @@ export type DeviceState = {
   layerCount: number;
   keyCount: number;
   matrixRowCount: number;
+  encoderReversed: boolean;
   enabledLayers: boolean[];
 };
 
@@ -68,6 +69,7 @@ export async function getDeviceState(transport: WebHidTransport): Promise<Device
     layerCount,
     keyCount: response.payload[2] ?? 0,
     matrixRowCount: response.payload[3] ?? 0,
+    encoderReversed: (response.payload[5] ?? 0) !== 0,
     enabledLayers: decodeEnabledLayers(enabledLayerMask, layerCount),
   };
 }
@@ -75,6 +77,15 @@ export async function getDeviceState(transport: WebHidTransport): Promise<Device
 export async function setDeviceLayer(transport: WebHidTransport, layer: number) {
   const response = await sendCommand(transport, ConfigCommand.SetLayer, [layer]);
   assertConfigOk(response);
+}
+
+export async function setDeviceEncoderReversed(transport: WebHidTransport, reversed: boolean) {
+  const response = await sendCommand(transport, ConfigCommand.SetEncoderReversed, [reversed ? 1 : 0]);
+  if (response.status === ConfigStatus.UnknownCommand || response.status === ConfigStatus.Unsupported) {
+    throw new Error(t.device.encoderReverseUnsupported);
+  }
+  assertConfigOk(response);
+  return (response.payload[0] ?? 0) !== 0;
 }
 
 export async function setDeviceLayerEnabled(

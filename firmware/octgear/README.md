@@ -66,11 +66,11 @@ Generated headerは直接編集しません。Hardware profile変更後は`pnpm 
 | Encoder CW | Volume Up | None |
 | Encoder SW | None | None |
 
-Layer 2〜7は全controlが`None`です。既定で有効なのはLayer 0/1だけで、Layer 0は無効化できません。既に保存済みの設定はFirmware更新だけでは変更されず、初期化したときにこの既定値が適用されます。
+Layer 2〜7は全controlが`None`です。既定で有効なのはLayer 0/1だけで、Layer 0は無効化できません。Encoder方向の既定値はhardware profileの`encoder.reversed`で、現行構成は反転ONです。既に保存済みの設定はFirmware更新だけでは変更されず、初期化したときにこの既定値が適用されます。
 
 ## Storage
 
-Keymap、layer enable mask、layer RGB colorsはexternal SPI Flash上の独立した3つの4KB sectorへ循環保存します。各slotはgenerationとCRCを持ち、起動時はCRCが正常な最新generationを読み込みます。保存中に電源が切れて新slotが不完全になっても、直前の正常slotへfallbackします。
+Keymap、layer enable mask、layer RGB colors、Encoder方向はexternal SPI Flash上の独立した3つの4KB sectorへ循環保存します。各slotはgenerationとCRCを持ち、起動時はCRCが正常な最新generationを読み込みます。保存中に電源が切れて新slotが不完全になっても、直前の正常slotへfallbackします。
 
 標準buildはArduino coreがfilesystem用として扱う64KBをFirmware領域から分離して予約します。Filesystemはmountせず、その先頭12KBをjournalに直接使用します。設定変更時はRAM上の設定全体を次slotへ書き、1回の保存で消去するsectorを1つに限定します。保存形式が無効または未初期化ならcompile済みdefaultで初期化します。
 

@@ -19,6 +19,8 @@ RemapperはWebHIDでOctGearへ接続します。Web Serialは使いません。
 
 Readはdeviceから全keymapとlayer設定を再読込し、未保存の編集内容を置き換えます。Saveは全layer / controlを比較しますが、変更がない設定へのFlash writeは行いません。Layer 0は安全なbase layerとして常に有効です。
 
+Hardware panelの「回転方向 / 反転」はEncoderのCCW/CWを入れ替え、変更時に実機へ即座に保存します。
+
 初期キーマップはLayer 0/1だけに割り当てがあり、Layer 2〜7は空です。Firmwareを更新しただけでは保存済み設定を上書きしません。初期値へ戻す場合はRemapperのRead左側にあるメニューから初期化します。
 
 物理キーやencoderを操作すると、対応するcontrol tileが選択されます。接続中はheartbeatにより通常のKeyboard / Consumer出力がfirmware側で抑止されるため、設定操作がPC入力として流れません。
@@ -147,7 +149,8 @@ Keyboard modifier bitmap:
 | Device pickerにOctGearがない | 対応browser、HTTPS / localhost、USB cable、VID/PIDを確認 |
 | 接続直後に切断表示になる | heartbeat timeout、device再起動、別tabの接続を確認 |
 | Remapper接続中に通常キーが出ない | 設計どおり。Disconnectすると通常出力へ戻る |
-| Encoder方向またはdetent数が違う | profileの`reversed` / `stepsPerDetent`を確認して再build |
+| Encoder方向が違う | Remapperの「回転方向 / 反転」を切り替える |
+| Encoderのdetent数が違う | profileの`stepsPerDetent`を確認して再build |
 | UF2 driveへ直接書けない | UF2をdownloadしてOSからcopy |
 | `OCTGEAR` driveが出ない | USB接続前からKey 5を保持しているか確認 |
 | Rescue portを自動検出できない | OSのserial port権限とmanual selectionを確認 |

@@ -82,6 +82,10 @@ export const ja = {
     keys: "Keys",
     encoder: "Encoder",
     encoderValue: (pinCount: number) => `${pinCount}pin A/C/B/SW`,
+    encoderDirection: "回転方向",
+    encoderReversed: "反転",
+    encoderDirectionUpdated: (reversed: boolean) => `Encoder方向: ${reversed ? "反転" : "標準"}`,
+    encoderDirectionFailed: "Encoder方向の変更に失敗しました",
     matrix: "Matrix",
     matrixValue: (rows: number, columns: number, diodeDirection: string) =>
       `${rows} × ${columns} / ${diodeDirection === "none" ? "ダイオードなし" : diodeDirection}`,
@@ -108,7 +112,7 @@ export const ja = {
     moreActions: "その他の操作",
     reset: "初期化",
     resetTitle: "キーマップを初期化しますか？",
-    resetDescription: "全キーの割り当て、レイヤーの有効状態、LED色を既定値へ戻します。この操作は実機へすぐ保存されます。",
+    resetDescription: "全キーの割り当て、レイヤーの有効状態、LED色、Encoder方向を既定値へ戻します。この操作は実機へすぐ保存されます。",
     resetCancel: "キャンセル",
     resetConfirm: "初期化する",
     resetting: "キーマップを初期化中",
@@ -197,6 +201,7 @@ export const ja = {
     diagnosticStorageUnsupported: "ストレージ診断未対応のファームウェアです。最新UF2を書き込んでください",
     layerEnabledUnsupported: "レイヤー有効設定に未対応のファームウェアです。最新UF2を書き込んでください",
     layerColorUnsupported: "レイヤー色設定に未対応のファームウェアです。最新UF2を書き込んでください",
+    encoderReverseUnsupported: "Encoder方向設定に未対応のファームウェアです。最新UF2を書き込んでください",
     invalidDiagnosticReport: "診断レポートの内容が一致しません",
     unexpectedResponse: (actual: number, expected: number) =>
       `Unexpected HID response command ${actual}; expected ${expected}`,

@@ -45,7 +45,7 @@
     "bPin": 11,
     "switchPin": 10,
     "stepsPerDetent": 2,
-    "reversed": false,
+    "reversed": true,
     "controls": [
       { "id": "enc-ccw", "label": "CCW", "firmwareIndex": 8, "kind": "encoder", "notes": "Quadrature rotation event" },
       { "id": "enc-cw", "label": "CW", "firmwareIndex": 9, "kind": "encoder", "notes": "Quadrature rotation event" },

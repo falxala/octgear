@@ -1,6 +1,7 @@
 #include "key_scanner.h"
 
 #include "config.h"
+#include "keymap.h"
 
 #ifndef digitalReadFast
 #define digitalReadFast digitalRead
@@ -99,7 +100,7 @@ void enqueueEncoderClick(int8_t direction) {
     return;
   }
 
-  const int8_t normalized = Config::ENCODER_REVERSED ? static_cast<int8_t>(-direction) : direction;
+  const int8_t normalized = encoderReversed() ? static_cast<int8_t>(-direction) : direction;
   if (normalized > 0 && pendingEncoderClicks < 4) {
     pendingEncoderClicks++;
   } else if (normalized < 0 && pendingEncoderClicks > -4) {

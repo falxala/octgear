@@ -21,6 +21,9 @@ constexpr uint8_t LAYER_COLOR_SIZE = 3;
 
 constexpr int GENERATION_ADDRESS = 8;
 constexpr int PAYLOAD_LENGTH_ADDRESS = 12;
+constexpr int ENCODER_REVERSED_ADDRESS = 14;
+constexpr int ENCODER_REVERSED_MARKER_ADDRESS = 15;
+constexpr uint8_t ENCODER_REVERSED_MARKER = 0xA5;
 constexpr int CRC_ADDRESS = 16;
 constexpr int STORAGE_HEADER_SIZE = 20;
 constexpr int ASSIGNMENTS_ADDRESS = STORAGE_HEADER_SIZE;
@@ -184,8 +187,8 @@ void buildSlotData(uint8_t* data, uint32_t generation) {
   data[7] = ASSIGNMENT_RECORD_SIZE;
   writeUint32(data, GENERATION_ADDRESS, generation);
   writeUint16(data, PAYLOAD_LENGTH_ADDRESS, STORAGE_DATA_SIZE - STORAGE_HEADER_SIZE);
-  data[14] = 0;
-  data[15] = 0;
+  data[ENCODER_REVERSED_ADDRESS] = encoderReversed() ? 1 : 0;
+  data[ENCODER_REVERSED_MARKER_ADDRESS] = ENCODER_REVERSED_MARKER;
 
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
     for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
@@ -201,7 +204,6 @@ void buildSlotData(uint8_t* data, uint32_t generation) {
     data[address + 1] = color.green;
     data[address + 2] = color.blue;
   }
-
   writeUint32(data, CRC_ADDRESS, calculateSlotCrc(data));
 }
 
@@ -253,6 +255,9 @@ bool loadKeymapFromStorage() {
     const int address = layerColorAddress(layer);
     setLayerColor(layer, { data[address], data[address + 1], data[address + 2] });
   }
+  setEncoderReversed(data[ENCODER_REVERSED_MARKER_ADDRESS] == ENCODER_REVERSED_MARKER
+    ? data[ENCODER_REVERSED_ADDRESS] != 0
+    : Config::ENCODER_REVERSED);
   return true;
 }
 
@@ -295,11 +300,17 @@ bool saveLayerColorToStorage(uint8_t layer) {
   return saveKeymapToStorage();
 }
 
+bool saveEncoderReversedToStorage() {
+  return saveKeymapToStorage();
+}
+
 bool runKeymapStorageSelfTest() {
   KeyAssignment backup[Config::LAYER_COUNT][Config::KEY_COUNT];
   KeyAssignment pattern[Config::LAYER_COUNT][Config::KEY_COUNT];
   const uint8_t backupLayerMask = enabledLayerMask();
   const uint8_t backupActiveLayer = activeLayer();
+  const bool backupEncoderReversed = encoderReversed();
+  const bool patternEncoderReversed = !backupEncoderReversed;
   const uint8_t patternLayerMask = static_cast<uint8_t>(0x55U & ((1U << Config::LAYER_COUNT) - 1U));
   LayerColor backupLayerColors[Config::LAYER_COUNT];
   LayerColor patternLayerColors[Config::LAYER_COUNT];
@@ -329,16 +340,22 @@ bool runKeymapStorageSelfTest() {
   }
 
   setEnabledLayerMask(patternLayerMask);
+  setEncoderReversed(patternEncoderReversed);
 
   bool ok = saveKeymapToStorage();
   if (ok) {
     clearKeymap();
     setEnabledLayerMask(0x01);
     resetLayerColors();
+    setEncoderReversed(backupEncoderReversed);
     ok = loadKeymapFromStorage();
   }
 
   if (ok && enabledLayerMask() != patternLayerMask) {
+    ok = false;
+  }
+
+  if (ok && encoderReversed() != patternEncoderReversed) {
     ok = false;
   }
 
@@ -388,6 +405,7 @@ bool runKeymapStorageSelfTest() {
 
   setEnabledLayerMask(backupLayerMask);
   setActiveLayer(backupActiveLayer);
+  setEncoderReversed(backupEncoderReversed);
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
     setLayerColor(layer, backupLayerColors[layer]);
   }
