@@ -41,9 +41,9 @@ The compiled default direction is reversed. Remapper can change and persist the 
 
 | Signal | GPIO | Firmware control index |
 | --- | ---: | ---: |
-| A | 13 | CCW/CW: 8/9 |
+| A | 11 | CCW/CW: 8/9 |
 | Common | 12 | - |
-| B | 11 | CCW/CW: 8/9 |
+| B | 13 | CCW/CW: 8/9 |
 | SW | 10 | 10 |
 
 ## Removed Parts

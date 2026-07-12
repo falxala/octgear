@@ -40,9 +40,9 @@
   "encoder": {
     "enabled": true,
     "pinCount": 4,
-    "aPin": 13,
+    "aPin": 11,
     "commonPin": 12,
-    "bPin": 11,
+    "bPin": 13,
     "switchPin": 10,
     "stepsPerDetent": 4,
     "reversed": true,

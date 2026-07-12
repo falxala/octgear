@@ -41,9 +41,9 @@ constexpr uint8_t KEY_MATRIX_COLUMNS[PHYSICAL_KEY_COUNT] = {
   0, 1, 2, 3, 0, 1, 2, 3
 };
 
-constexpr uint8_t ENCODER_A_PIN = 13;
+constexpr uint8_t ENCODER_A_PIN = 11;
 constexpr uint8_t ENCODER_COMMON_PIN = 12;
-constexpr uint8_t ENCODER_B_PIN = 11;
+constexpr uint8_t ENCODER_B_PIN = 13;
 constexpr uint8_t ENCODER_SWITCH_PIN = 10;
 constexpr uint8_t ENCODER_CCW_KEY_INDEX = 8;
 constexpr uint8_t ENCODER_CW_KEY_INDEX = 9;
