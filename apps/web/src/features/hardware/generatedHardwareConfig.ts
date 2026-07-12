@@ -24,12 +24,16 @@ export const HARDWARE_CONFIG = {
   layerCount: 8,
   defaultEnabledLayers: [0,1] as readonly number[],
   defaultLayerColors: [[255,255,255],[255,0,0],[0,180,255],[0,255,80],[255,160,0],[180,0,255],[0,255,220],[255,70,140]] as readonly (readonly [number, number, number])[],
-  virtualGroundCount: 2,
+  matrix: {
+    rowCount: 2,
+    columnCount: 4,
+    diodeDirection: "none",
+  },
   externalRgbLed: false,
   oled: false,
   encoder: {
     enabled: true,
-    pinCount: 3,
+    pinCount: 4,
     controls: encoderControls,
   },
   keyPins: keyControls,

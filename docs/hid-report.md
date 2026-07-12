@@ -48,7 +48,7 @@ byte 3..31  response payload
 
 | Value | Name | Request payload | Response payload |
 | ---: | --- | --- | --- |
-| `0x01` | `GetState` | none | `activeLayer, layerCount, keyCount, virtualGroundCount, enabledLayerMask` |
+| `0x01` | `GetState` | none | `activeLayer, layerCount, keyCount, matrixRowCount, enabledLayerMask` |
 | `0x02` | `SetLayer` | `layer` | `layer` |
 | `0x03` | `GetKey` | `layer, keyIndex` | key assignment payload |
 | `0x04` | `SetKey` | key assignment payload | `layer, keyIndex` |

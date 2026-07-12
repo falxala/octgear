@@ -2,10 +2,6 @@
 
 #include "config.h"
 
-#if defined(ARDUINO_ARCH_RP2040)
-#include "hardware/gpio.h"
-#endif
-
 #ifndef digitalReadFast
 #define digitalReadFast digitalRead
 #endif
@@ -13,8 +9,8 @@
 namespace {
 
 Config::KeyMask stableMask = 0;
-Config::KeyMask stableDirectMask = 0;
-Config::KeyMask lastRawDirectMask = 0;
+Config::KeyMask stableInputMask = 0;
+Config::KeyMask lastRawInputMask = 0;
 Config::KeyMask oldStableMask = 0;
 Config::KeyMask activeEncoderPulseMask = 0;
 uint32_t lastRawChangeUs = 0;
@@ -26,33 +22,63 @@ constexpr Config::KeyMask keyBit(uint8_t keyIndex) {
   return static_cast<Config::KeyMask>(1U << keyIndex);
 }
 
-#if defined(ARDUINO_ARCH_RP2040)
 static_assert(Config::KEY_COUNT <= 16);
 static_assert(Config::PHYSICAL_KEY_COUNT == 8);
+static_assert(Config::MATRIX_COLUMN_COUNT <= 16);
+constexpr Config::KeyMask PHYSICAL_KEY_MASK =
+  static_cast<Config::KeyMask>((1U << Config::PHYSICAL_KEY_COUNT) - 1U);
 
-Config::KeyMask readRawDirectMaskFast() {
-  const uint32_t pins = ~gpio_get_all();
+void selectMatrixRow(uint8_t row) {
+  const uint8_t pin = Config::MATRIX_ROW_PINS[row];
+  digitalWrite(pin, LOW);
+  pinMode(pin, OUTPUT);
+}
+
+void releaseMatrixRow(uint8_t row) {
+  pinMode(Config::MATRIX_ROW_PINS[row], INPUT);
+}
+
+Config::KeyMask readRawMatrixMask(bool& ghosted) {
   Config::KeyMask mask = 0;
+  uint16_t rowStates[Config::MATRIX_ROW_COUNT] = { 0 };
 
-  for (uint8_t i = 0; i < Config::PHYSICAL_KEY_COUNT; i++) {
-    mask |= static_cast<Config::KeyMask>(((pins >> Config::KEY_PINS[i]) & 1U) << i);
+  for (uint8_t row = 0; row < Config::MATRIX_ROW_COUNT; row++) {
+    selectMatrixRow(row);
+    delayMicroseconds(1);
+
+    for (uint8_t column = 0; column < Config::MATRIX_COLUMN_COUNT; column++) {
+      if (!digitalReadFast(Config::MATRIX_COLUMN_PINS[column])) {
+        rowStates[row] |= static_cast<uint16_t>(1U << column);
+      }
+    }
+
+    releaseMatrixRow(row);
   }
-  mask |= static_cast<Config::KeyMask>(((pins >> Config::ENCODER_SWITCH_PIN) & 1U) << Config::ENCODER_SWITCH_KEY_INDEX);
 
+  ghosted = false;
+  for (uint8_t first = 0; first < Config::MATRIX_ROW_COUNT; first++) {
+    for (uint8_t second = first + 1; second < Config::MATRIX_ROW_COUNT; second++) {
+      const uint16_t sharedColumns = rowStates[first] & rowStates[second];
+      if ((sharedColumns & static_cast<uint16_t>(sharedColumns - 1U)) != 0) {
+        ghosted = true;
+      }
+    }
+  }
+
+  for (uint8_t key = 0; key < Config::PHYSICAL_KEY_COUNT; key++) {
+    const uint16_t columnBit = static_cast<uint16_t>(1U << Config::KEY_MATRIX_COLUMNS[key]);
+    if ((rowStates[Config::KEY_MATRIX_ROWS[key]] & columnBit) != 0) {
+      mask |= keyBit(key);
+    }
+  }
   return mask;
 }
-#endif
 
-Config::KeyMask readRawDirectMask() {
-#if defined(ARDUINO_ARCH_RP2040)
-  return readRawDirectMaskFast();
-#else
-  Config::KeyMask mask = 0;
-
-  for (uint8_t i = 0; i < Config::PHYSICAL_KEY_COUNT; i++) {
-    if (!digitalReadFast(Config::KEY_PINS[i])) {
-      mask |= keyBit(i);
-    }
+Config::KeyMask readRawInputMask() {
+  bool matrixGhosted = false;
+  Config::KeyMask mask = readRawMatrixMask(matrixGhosted);
+  if (matrixGhosted) {
+    mask = stableInputMask & PHYSICAL_KEY_MASK;
   }
 
   if (!digitalReadFast(Config::ENCODER_SWITCH_PIN)) {
@@ -60,7 +86,6 @@ Config::KeyMask readRawDirectMask() {
   }
 
   return mask;
-#endif
 }
 
 uint8_t readEncoderState() {
@@ -125,24 +150,25 @@ Config::KeyMask consumeEncoderPulseMask() {
 }  // namespace
 
 void beginKeyScanner() {
-  for (uint8_t i = 0; i < Config::VIRTUAL_GROUND_COUNT; i++) {
-    digitalWrite(Config::VIRTUAL_GROUND_PINS[i], LOW);
-    pinMode(Config::VIRTUAL_GROUND_PINS[i], OUTPUT);
+  for (uint8_t row = 0; row < Config::MATRIX_ROW_COUNT; row++) {
+    releaseMatrixRow(row);
   }
 
-  for (uint8_t i = 0; i < Config::PHYSICAL_KEY_COUNT; i++) {
-    pinMode(Config::KEY_PINS[i], INPUT_PULLUP);
+  for (uint8_t column = 0; column < Config::MATRIX_COLUMN_COUNT; column++) {
+    pinMode(Config::MATRIX_COLUMN_PINS[column], INPUT_PULLUP);
   }
 
+  digitalWrite(Config::ENCODER_COMMON_PIN, LOW);
+  pinMode(Config::ENCODER_COMMON_PIN, OUTPUT);
   pinMode(Config::ENCODER_A_PIN, INPUT_PULLUP);
   pinMode(Config::ENCODER_B_PIN, INPUT_PULLUP);
   pinMode(Config::ENCODER_SWITCH_PIN, INPUT_PULLUP);
 
   lastEncoderState = readEncoderState();
-  stableDirectMask = readRawDirectMask();
-  stableMask = stableDirectMask;
+  stableInputMask = readRawInputMask();
+  stableMask = stableInputMask;
   oldStableMask = stableMask;
-  lastRawDirectMask = stableDirectMask;
+  lastRawInputMask = stableInputMask;
   lastRawChangeUs = micros();
 }
 
@@ -152,7 +178,7 @@ bool updateKeyScanner(bool lowLatencyPress) {
   if (activeEncoderPulseMask != 0) {
     activeEncoderPulseMask = 0;
     oldStableMask = stableMask;
-    stableMask = stableDirectMask;
+    stableMask = stableInputMask;
     return true;
   }
 
@@ -160,23 +186,23 @@ bool updateKeyScanner(bool lowLatencyPress) {
   if (nextEncoderPulseMask != 0) {
     activeEncoderPulseMask = nextEncoderPulseMask;
     oldStableMask = stableMask;
-    stableMask = stableDirectMask | activeEncoderPulseMask;
+    stableMask = stableInputMask | activeEncoderPulseMask;
     return true;
   }
 
-  const Config::KeyMask rawMask = readRawDirectMask();
+  const Config::KeyMask rawMask = readRawInputMask();
   const uint32_t nowUs = micros();
 
-  if (rawMask != lastRawDirectMask) {
-    lastRawDirectMask = rawMask;
+  if (rawMask != lastRawInputMask) {
+    lastRawInputMask = rawMask;
     lastRawChangeUs = nowUs;
 
     if (lowLatencyPress) {
-      const Config::KeyMask newlyPressed = rawMask & ~stableDirectMask;
+      const Config::KeyMask newlyPressed = rawMask & ~stableInputMask;
       if (newlyPressed != 0) {
-        stableDirectMask |= newlyPressed;
+        stableInputMask |= newlyPressed;
         oldStableMask = stableMask;
-        stableMask = stableDirectMask;
+        stableMask = stableInputMask;
         return true;
       }
     }
@@ -184,7 +210,7 @@ bool updateKeyScanner(bool lowLatencyPress) {
     return false;
   }
 
-  if (rawMask == stableDirectMask) {
+  if (rawMask == stableInputMask) {
     return false;
   }
 
@@ -193,8 +219,8 @@ bool updateKeyScanner(bool lowLatencyPress) {
   }
 
   oldStableMask = stableMask;
-  stableDirectMask = rawMask;
-  stableMask = stableDirectMask;
+  stableInputMask = rawMask;
+  stableMask = stableInputMask;
   return true;
 }
 

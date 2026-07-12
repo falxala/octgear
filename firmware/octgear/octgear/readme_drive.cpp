@@ -4,6 +4,7 @@
 
 #include "Adafruit_TinyUSB.h"
 #include "config.h"
+#include "key_scanner.h"
 #include "rescue_cmd_asset.h"
 
 namespace {
@@ -105,8 +106,10 @@ bool readmeDriveEnabledAtBoot() {
     return false;
   }
 
-  const uint8_t pin = Config::KEY_PINS[Config::README_DRIVE_ENABLE_KEY_INDEX];
-  return digitalRead(pin) == LOW;
+  const Config::KeyMask key = static_cast<Config::KeyMask>(
+    1U << Config::README_DRIVE_ENABLE_KEY_INDEX
+  );
+  return (currentKeyMask() & key) != 0;
 }
 
 void putLe16(uint8_t* buffer, uint16_t offset, uint16_t value) {

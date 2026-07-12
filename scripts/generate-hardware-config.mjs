@@ -16,8 +16,10 @@ validateProfile(profile);
 const physicalKeyCount = profile.keys.length;
 const encoderControlCount = profile.encoder.enabled ? profile.encoder.controls.length : 0;
 const keyCount = physicalKeyCount + encoderControlCount;
-const keyPins = profile.keys.map((key) => key.gpio);
-const virtualGroundPins = profile.virtualGrounds.map((rail) => rail.gpio);
+const matrixRowPins = profile.matrix.rows.map((row) => row.gpio);
+const matrixColumnPins = profile.matrix.columns.map((column) => column.gpio);
+const keyMatrixRows = profile.keys.map((key) => key.row);
+const keyMatrixColumns = profile.keys.map((key) => key.column);
 const encoderControlById = Object.fromEntries(profile.encoder.controls.map((control) => [control.id, control]));
 const defaultEnabledLayerMask = profile.defaultEnabledLayers.reduce(
   (mask, layer) => mask | (1 << layer),
@@ -36,8 +38,20 @@ function validateProfile(value) {
   requireArray(value.defaultEnabledLayers, "defaultEnabledLayers");
   requireArray(value.defaultLayerColors, "defaultLayerColors");
   requireArray(value.keys, "keys");
-  requireArray(value.virtualGrounds, "virtualGrounds");
+  requireObject(value.matrix, "matrix");
+  requireArray(value.matrix.rows, "matrix.rows");
+  requireArray(value.matrix.columns, "matrix.columns");
   requireObject(value.encoder, "encoder");
+
+  if (value.matrix.diodeDirection !== "none") {
+    throw new Error("matrix.diodeDirection must be none");
+  }
+  if (value.matrix.rows.length === 0 || value.matrix.columns.length === 0) {
+    throw new Error("matrix must contain at least one row and column");
+  }
+
+  value.matrix.rows.forEach((row, index) => validateMatrixLine(row, index, `matrix.rows[${index}]`));
+  value.matrix.columns.forEach((column, index) => validateMatrixLine(column, index, `matrix.columns[${index}]`));
 
   const enabledLayerSet = new Set();
   value.defaultEnabledLayers.forEach((layer, index) => {
@@ -70,24 +84,34 @@ function validateProfile(value) {
     });
   });
 
+  const keyPositions = new Set();
   value.keys.forEach((key, index) => {
     requireInteger(key.firmwareIndex, `keys[${index}].firmwareIndex`);
-    requireInteger(key.gpio, `keys[${index}].gpio`);
+    requireInteger(key.row, `keys[${index}].row`);
+    requireInteger(key.column, `keys[${index}].column`);
     if (key.firmwareIndex !== index) {
       throw new Error(`keys[${index}].firmwareIndex must be ${index}`);
     }
-  });
-
-  value.virtualGrounds.forEach((rail, index) => {
-    requireInteger(rail.firmwareIndex, `virtualGrounds[${index}].firmwareIndex`);
-    requireInteger(rail.gpio, `virtualGrounds[${index}].gpio`);
-    if (rail.firmwareIndex !== index) {
-      throw new Error(`virtualGrounds[${index}].firmwareIndex must be ${index}`);
+    if (key.row < 0 || key.row >= value.matrix.rows.length) {
+      throw new Error(`keys[${index}].row must reference matrix.rows`);
     }
+    if (key.column < 0 || key.column >= value.matrix.columns.length) {
+      throw new Error(`keys[${index}].column must reference matrix.columns`);
+    }
+    const position = `${key.row}:${key.column}`;
+    if (keyPositions.has(position)) {
+      throw new Error(`keys[${index}] duplicates matrix position ${position}`);
+    }
+    keyPositions.add(position);
   });
 
   if (value.encoder.enabled) {
+    requireInteger(value.encoder.pinCount, "encoder.pinCount");
+    if (value.encoder.pinCount !== 4) {
+      throw new Error("encoder.pinCount must be 4 for A/Common/B/SW");
+    }
     requireInteger(value.encoder.aPin, "encoder.aPin");
+    requireInteger(value.encoder.commonPin, "encoder.commonPin");
     requireInteger(value.encoder.bPin, "encoder.bPin");
     requireInteger(value.encoder.switchPin, "encoder.switchPin");
     requireInteger(value.encoder.stepsPerDetent, "encoder.stepsPerDetent");
@@ -104,6 +128,31 @@ function validateProfile(value) {
       }
     });
   }
+
+  const usedPins = new Map();
+  value.matrix.rows.forEach((row, index) => registerPin(usedPins, row.gpio, `matrix.rows[${index}]`));
+  value.matrix.columns.forEach((column, index) => registerPin(usedPins, column.gpio, `matrix.columns[${index}]`));
+  if (value.encoder.enabled) {
+    registerPin(usedPins, value.encoder.aPin, "encoder.aPin");
+    registerPin(usedPins, value.encoder.commonPin, "encoder.commonPin");
+    registerPin(usedPins, value.encoder.bPin, "encoder.bPin");
+    registerPin(usedPins, value.encoder.switchPin, "encoder.switchPin");
+  }
+}
+
+function validateMatrixLine(line, index, name) {
+  requireInteger(line.firmwareIndex, `${name}.firmwareIndex`);
+  requireInteger(line.gpio, `${name}.gpio`);
+  if (line.firmwareIndex !== index) {
+    throw new Error(`${name}.firmwareIndex must be ${index}`);
+  }
+}
+
+function registerPin(usedPins, pin, name) {
+  if (usedPins.has(pin)) {
+    throw new Error(`${name} conflicts with ${usedPins.get(pin)} on GPIO ${pin}`);
+  }
+  usedPins.set(pin, name);
 }
 
 function firmwareHeader() {
@@ -122,19 +171,29 @@ constexpr uint8_t DEFAULT_ENABLED_LAYER_MASK = ${hexByte(defaultEnabledLayerMask
 constexpr uint8_t DEFAULT_LAYER_COLORS[LAYER_COUNT][3] = {
 ${profile.defaultLayerColors.map((color) => `  { ${color.join(", ")} },`).join("\n")}
 };
-constexpr uint8_t VIRTUAL_GROUND_COUNT = ${profile.virtualGrounds.length};
+constexpr uint8_t MATRIX_ROW_COUNT = ${profile.matrix.rows.length};
+constexpr uint8_t MATRIX_COLUMN_COUNT = ${profile.matrix.columns.length};
 
 using KeyMask = uint16_t;
 
-constexpr uint8_t KEY_PINS[PHYSICAL_KEY_COUNT] = {
-  ${keyPins.join(", ")}
+constexpr uint8_t MATRIX_ROW_PINS[MATRIX_ROW_COUNT] = {
+  ${matrixRowPins.join(", ")}
 };
 
-constexpr uint8_t VIRTUAL_GROUND_PINS[VIRTUAL_GROUND_COUNT] = {
-  ${virtualGroundPins.join(", ")}
+constexpr uint8_t MATRIX_COLUMN_PINS[MATRIX_COLUMN_COUNT] = {
+  ${matrixColumnPins.join(", ")}
+};
+
+constexpr uint8_t KEY_MATRIX_ROWS[PHYSICAL_KEY_COUNT] = {
+  ${keyMatrixRows.join(", ")}
+};
+
+constexpr uint8_t KEY_MATRIX_COLUMNS[PHYSICAL_KEY_COUNT] = {
+  ${keyMatrixColumns.join(", ")}
 };
 
 constexpr uint8_t ENCODER_A_PIN = ${profile.encoder.aPin};
+constexpr uint8_t ENCODER_COMMON_PIN = ${profile.encoder.commonPin};
 constexpr uint8_t ENCODER_B_PIN = ${profile.encoder.bPin};
 constexpr uint8_t ENCODER_SWITCH_PIN = ${profile.encoder.switchPin};
 constexpr uint8_t ENCODER_CCW_KEY_INDEX = ${encoderControlById["enc-ccw"].firmwareIndex};
@@ -172,7 +231,11 @@ export const HARDWARE_CONFIG = {
   layerCount: ${profile.layerCount},
   defaultEnabledLayers: ${json(profile.defaultEnabledLayers)} as readonly number[],
   defaultLayerColors: ${json(profile.defaultLayerColors)} as readonly (readonly [number, number, number])[],
-  virtualGroundCount: ${profile.virtualGrounds.length},
+  matrix: {
+    rowCount: ${profile.matrix.rows.length},
+    columnCount: ${profile.matrix.columns.length},
+    diodeDirection: ${json(profile.matrix.diodeDirection)},
+  },
   externalRgbLed: ${profile.externalRgbLed ? "true" : "false"},
   oled: ${profile.oled ? "true" : "false"},
   encoder: {
@@ -188,16 +251,13 @@ export const HARDWARE_CONFIG = {
 
 function pinoutMarkdown() {
   const keyRows = profile.keys.map((key) =>
-    `| ${key.logicalName} | ${key.firmwareIndex} | ${key.gpio} | ${key.virtualGround} | ${key.notes} |`
+    `| ${key.logicalName} | ${key.firmwareIndex} | Row ${key.row + 1} / Column ${key.column + 1} | ${key.notes} |`
   ).join("\n");
-  const encoderRows = profile.encoder.controls.map((control) => {
-    const gpio = control.id === "enc-sw"
-      ? `${profile.encoder.switchPin}`
-      : `A: ${profile.encoder.aPin} / B: ${profile.encoder.bPin}`;
-    return `| ${control.label === "SW" ? "Encoder SW" : `Encoder ${control.label}`} | ${control.firmwareIndex} | ${gpio} | ${control.notes} |`;
-  }).join("\n");
-  const virtualGroundRows = profile.virtualGrounds.map((rail) =>
-    `| ${rail.rail} | ${rail.firmwareIndex} | ${rail.gpio} | ${rail.notes} |`
+  const matrixRows = profile.matrix.rows.map((row) =>
+    `| ${row.label} | ${row.firmwareIndex} | ${row.gpio} | Scan output; selected row is OUTPUT LOW |`
+  ).join("\n");
+  const matrixColumnRows = profile.matrix.columns.map((column) =>
+    `| ${column.label} | ${column.firmwareIndex} | ${column.gpio} | INPUT_PULLUP |`
   ).join("\n");
 
   return `# Pinout
@@ -206,29 +266,34 @@ function pinoutMarkdown() {
 
 この表は \`hardware/octgear/profile.json\` から生成します。
 
-## Key Inputs
+## Key Matrix
 
-Direct入力は8本です。各入力はファームウェアで \`INPUT_PULLUP\` に設定します。
+8 keys form a 2 x 4 matrix without diodes. Columns use \`INPUT_PULLUP\`; firmware drives only the selected row \`OUTPUT LOW\` and leaves the other row high impedance.
 
-| Logical key | Firmware index | GPIO | Virtual ground rail | Notes |
-| --- | ---: | --- | --- | --- |
+| Logical key | Firmware index | Matrix position | Notes |
+| --- | ---: | --- | --- |
 ${keyRows}
+
+| Row | Index | GPIO | Mode |
+| --- | ---: | ---: | --- |
+${matrixRows}
+
+| Column | Index | GPIO | Mode |
+| --- | ---: | ---: | --- |
+${matrixColumnRows}
+
+Because the matrix has no diodes, rectangular multi-key combinations are electrically ambiguous. Firmware holds the previous stable matrix state while an ambiguous combination is present, preventing phantom key output.
 
 ## Rotary Encoder
 
-エンコーダのA/B相は回転方向ごとの仮想キーとして扱います。SWは通常のDirect入力と同じく \`INPUT_PULLUP\` です。
+Encoder A/B and SW are independent from the key matrix. A/B/SW use \`INPUT_PULLUP\`; Common is a dedicated \`OUTPUT LOW\` on GPIO ${profile.encoder.commonPin}.
 
-| Control | Firmware index | GPIO | Notes |
-| --- | ---: | --- | --- |
-${encoderRows}
-
-## Virtual Ground
-
-仮想GND用GPIOは2本です。どちらもファームウェアで常時 \`OUTPUT LOW\` に設定します。
-
-| Rail | Firmware index | GPIO | Notes |
-| --- | ---: | --- | --- |
-${virtualGroundRows}
+| Signal | GPIO | Firmware control index |
+| --- | ---: | ---: |
+| A | ${profile.encoder.aPin} | CCW/CW: ${encoderControlById["enc-ccw"].firmwareIndex}/${encoderControlById["enc-cw"].firmwareIndex} |
+| Common | ${profile.encoder.commonPin} | - |
+| B | ${profile.encoder.bPin} | CCW/CW: ${encoderControlById["enc-ccw"].firmwareIndex}/${encoderControlById["enc-cw"].firmwareIndex} |
+| SW | ${profile.encoder.switchPin} | ${encoderControlById["enc-sw"].firmwareIndex} |
 
 ## Removed Parts
 

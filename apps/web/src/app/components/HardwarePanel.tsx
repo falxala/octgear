@@ -24,8 +24,12 @@ export function HardwarePanel({ deviceState }: HardwarePanelProps) {
           <dd>{t.hardware.encoderValue(HARDWARE_CONFIG.encoder.pinCount)}</dd>
         </div>
         <div>
-          <dt>{t.hardware.virtualGround}</dt>
-          <dd>{HARDWARE_CONFIG.virtualGroundCount}</dd>
+          <dt>{t.hardware.matrix}</dt>
+          <dd>{t.hardware.matrixValue(
+            deviceState?.matrixRowCount ?? HARDWARE_CONFIG.matrix.rowCount,
+            HARDWARE_CONFIG.matrix.columnCount,
+            HARDWARE_CONFIG.matrix.diodeDirection,
+          )}</dd>
         </div>
         <div>
           <dt>{t.hardware.deviceLayer}</dt>

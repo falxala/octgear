@@ -67,7 +67,7 @@ void handleGetState() {
     activeLayer(),
     Config::LAYER_COUNT,
     Config::KEY_COUNT,
-    Config::VIRTUAL_GROUND_COUNT,
+    Config::MATRIX_ROW_COUNT,
     enabledLayerMask(),
   };
 

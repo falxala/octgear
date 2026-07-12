@@ -23,7 +23,7 @@ export type DeviceState = {
   activeLayer: number;
   layerCount: number;
   keyCount: number;
-  virtualGroundCount: number;
+  matrixRowCount: number;
   enabledLayers: boolean[];
 };
 
@@ -67,7 +67,7 @@ export async function getDeviceState(transport: WebHidTransport): Promise<Device
     activeLayer: response.payload[0] ?? 0,
     layerCount,
     keyCount: response.payload[2] ?? 0,
-    virtualGroundCount: response.payload[3] ?? 0,
+    matrixRowCount: response.payload[3] ?? 0,
     enabledLayers: decodeEnabledLayers(enabledLayerMask, layerCount),
   };
 }

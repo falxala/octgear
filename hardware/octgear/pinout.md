@@ -4,39 +4,45 @@
 
 この表は `hardware/octgear/profile.json` から生成します。
 
-## Key Inputs
+## Key Matrix
 
-Direct入力は8本です。各入力はファームウェアで `INPUT_PULLUP` に設定します。
+8 keys form a 2 x 4 matrix without diodes. Columns use `INPUT_PULLUP`; firmware drives only the selected row `OUTPUT LOW` and leaves the other row high impedance.
 
-| Logical key | Firmware index | GPIO | Virtual ground rail | Notes |
-| --- | ---: | --- | --- | --- |
-| Key 1 | 0 | 7 | VGND1 | Direct input |
-| Key 2 | 1 | 6 | VGND1 | Direct input |
-| Key 3 | 2 | 5 | VGND1 | Direct input |
-| Key 4 | 3 | 4 | VGND1 | Direct input |
-| Key 5 | 4 | 12 | VGND2 | Direct input / README drive trigger |
-| Key 6 | 5 | 11 | VGND2 | Direct input |
-| Key 7 | 6 | 10 | VGND2 | Direct input |
-| Key 8 | 7 | 9 | VGND2 | Direct input |
+| Logical key | Firmware index | Matrix position | Notes |
+| --- | ---: | --- | --- |
+| Key 1 | 0 | Row 1 / Column 1 | Matrix Row 1 / Column 1 |
+| Key 2 | 1 | Row 1 / Column 2 | Matrix Row 1 / Column 2 |
+| Key 3 | 2 | Row 1 / Column 3 | Matrix Row 1 / Column 3 |
+| Key 4 | 3 | Row 1 / Column 4 | Matrix Row 1 / Column 4 |
+| Key 5 | 4 | Row 2 / Column 1 | Matrix Row 2 / Column 1 / README drive trigger |
+| Key 6 | 5 | Row 2 / Column 2 | Matrix Row 2 / Column 2 |
+| Key 7 | 6 | Row 2 / Column 3 | Matrix Row 2 / Column 3 |
+| Key 8 | 7 | Row 2 / Column 4 | Matrix Row 2 / Column 4 |
+
+| Row | Index | GPIO | Mode |
+| --- | ---: | ---: | --- |
+| Row 1 | 0 | 0 | Scan output; selected row is OUTPUT LOW |
+| Row 2 | 1 | 9 | Scan output; selected row is OUTPUT LOW |
+
+| Column | Index | GPIO | Mode |
+| --- | ---: | ---: | --- |
+| Column 1 | 0 | 5 | INPUT_PULLUP |
+| Column 2 | 1 | 6 | INPUT_PULLUP |
+| Column 3 | 2 | 7 | INPUT_PULLUP |
+| Column 4 | 3 | 8 | INPUT_PULLUP |
+
+Because the matrix has no diodes, rectangular multi-key combinations are electrically ambiguous. Firmware holds the previous stable matrix state while an ambiguous combination is present, preventing phantom key output.
 
 ## Rotary Encoder
 
-エンコーダのA/B相は回転方向ごとの仮想キーとして扱います。SWは通常のDirect入力と同じく `INPUT_PULLUP` です。
+Encoder A/B and SW are independent from the key matrix. A/B/SW use `INPUT_PULLUP`; Common is a dedicated `OUTPUT LOW` on GPIO 12.
 
-| Control | Firmware index | GPIO | Notes |
-| --- | ---: | --- | --- |
-| Encoder CCW | 8 | A: 26 / B: 15 | Quadrature rotation event |
-| Encoder CW | 9 | A: 26 / B: 15 | Quadrature rotation event |
-| Encoder SW | 10 | 14 | Direct input |
-
-## Virtual Ground
-
-仮想GND用GPIOは2本です。どちらもファームウェアで常時 `OUTPUT LOW` に設定します。
-
-| Rail | Firmware index | GPIO | Notes |
-| --- | ---: | --- | --- |
-| VGND1 | 0 | 1 | Key 1-Key 4 physical group |
-| VGND2 | 1 | 8 | Key 5-Key 8 physical group |
+| Signal | GPIO | Firmware control index |
+| --- | ---: | ---: |
+| A | 13 | CCW/CW: 8/9 |
+| Common | 12 | - |
+| B | 11 | CCW/CW: 8/9 |
+| SW | 10 | 10 |
 
 ## Removed Parts
 
