@@ -30,6 +30,7 @@ import {
   sendRemapperHeartbeat,
   setDeviceLayer,
   setDeviceEncoderReversed,
+  setDeviceStatusLedBrightness,
   setDeviceLayerEnabled,
   setDeviceLayerColor,
   setDeviceKey,
@@ -76,6 +77,10 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [encoderDirectionUpdating, setEncoderDirectionUpdating] = useState(false);
+  const [statusLedBrightness, setStatusLedBrightness] = useState<number>(
+    HARDWARE_CONFIG.statusLedBrightness.default,
+  );
+  const [statusLedBrightnessUpdating, setStatusLedBrightnessUpdating] = useState(false);
   const [status, setStatus] = useState<string>(t.connection.initialStatus);
   const [firmwareStatus, setFirmwareStatus] = useState<string>(t.firmware.initialStatus);
   const [deviceState, setDeviceState] = useState<DeviceState | null>(null);
@@ -161,6 +166,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       });
       const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
       setDeviceState(state);
+      setStatusLedBrightness(
+        state.statusLedBrightnessSupported
+          ? state.statusLedBrightness
+          : HARDWARE_CONFIG.statusLedBrightness.default,
+      );
       setReadKeymap(uiKeymap);
       setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
       setReadEnabledLayers(state.enabledLayers);
@@ -215,6 +225,40 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
     }
   }
 
+  function updateStatusLedBrightnessDraft(brightness: number) {
+    setStatusLedBrightness(Math.max(
+      0,
+      Math.min(HARDWARE_CONFIG.statusLedBrightness.max, Math.trunc(brightness)),
+    ));
+  }
+
+  async function applyStatusLedBrightness() {
+    if (!connected || !deviceState) {
+      setStatus(t.connection.deviceNotConnected);
+      return;
+    }
+
+    if (!deviceState.statusLedBrightnessSupported) {
+      setStatus(t.device.statusLedBrightnessUnsupported);
+      return;
+    }
+
+    try {
+      setStatusLedBrightnessUpdating(true);
+      const saved = await setDeviceStatusLedBrightness(transport, statusLedBrightness);
+      setStatusLedBrightness(saved);
+      setDeviceState((current) =>
+        current ? { ...current, statusLedBrightness: saved } : current,
+      );
+      setStatus(t.hardware.statusLedBrightnessUpdated(saved));
+    } catch (error) {
+      setStatusLedBrightness(deviceState.statusLedBrightness);
+      setStatus(error instanceof Error ? error.message : t.hardware.statusLedBrightnessFailed);
+    } finally {
+      setStatusLedBrightnessUpdating(false);
+    }
+  }
+
   async function readAllAssignments() {
     if (!connected || !deviceState) {
       setStatus(t.connection.deviceNotConnected);
@@ -233,6 +277,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       );
       const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
       setDeviceState(state);
+      setStatusLedBrightness(
+        state.statusLedBrightnessSupported
+          ? state.statusLedBrightness
+          : HARDWARE_CONFIG.statusLedBrightness.default,
+      );
       setReadKeymap(uiKeymap);
       setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
       setReadEnabledLayers(state.enabledLayers);
@@ -332,6 +381,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
       const uiKeymap = expandKeymap(loadedKeymap, state.layerCount, HARDWARE_CONFIG.keyCount);
 
       setDeviceState(state);
+      setStatusLedBrightness(
+        state.statusLedBrightnessSupported
+          ? state.statusLedBrightness
+          : HARDWARE_CONFIG.statusLedBrightness.default,
+      );
       setReadKeymap(uiKeymap);
       setWriteKeymap(applyLayerNavigationOverrides(uiKeymap));
       setReadEnabledLayers(state.enabledLayers);
@@ -570,7 +624,11 @@ export function RemapperApp({ homeHref = homeUrl }: RemapperAppProps) {
         <HardwarePanel
           deviceState={deviceState}
           encoderDirectionUpdating={encoderDirectionUpdating}
+          statusLedBrightness={statusLedBrightness}
+          statusLedBrightnessUpdating={statusLedBrightnessUpdating}
           onEncoderReversedChange={(reversed) => void updateEncoderReversed(reversed)}
+          onStatusLedBrightnessChange={updateStatusLedBrightnessDraft}
+          onStatusLedBrightnessApply={() => void applyStatusLedBrightness()}
         />
         <RemapPanel
           activeLayer={activeLayer}

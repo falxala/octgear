@@ -42,6 +42,16 @@ function validateProfile(value) {
   requireArray(value.matrix.rows, "matrix.rows");
   requireArray(value.matrix.columns, "matrix.columns");
   requireObject(value.encoder, "encoder");
+  requireObject(value.statusLedBrightness, "statusLedBrightness");
+  requireInteger(value.statusLedBrightness.default, "statusLedBrightness.default");
+  requireInteger(value.statusLedBrightness.max, "statusLedBrightness.max");
+  if (value.statusLedBrightness.max < 0 || value.statusLedBrightness.max > 255) {
+    throw new Error("statusLedBrightness.max must be within 0-255");
+  }
+  if (value.statusLedBrightness.default < 0 ||
+      value.statusLedBrightness.default > value.statusLedBrightness.max) {
+    throw new Error("statusLedBrightness.default must be within 0-statusLedBrightness.max");
+  }
   if (typeof value.externalRgbLed !== "boolean") {
     throw new Error("externalRgbLed must be a boolean");
   }
@@ -184,6 +194,8 @@ constexpr uint8_t DEFAULT_ENABLED_LAYER_MASK = ${hexByte(defaultEnabledLayerMask
 constexpr uint8_t DEFAULT_LAYER_COLORS[LAYER_COUNT][3] = {
 ${profile.defaultLayerColors.map((color) => `  { ${color.join(", ")} },`).join("\n")}
 };
+constexpr uint8_t DEFAULT_STATUS_LED_BRIGHTNESS = ${profile.statusLedBrightness.default};
+constexpr uint8_t MAX_STATUS_LED_BRIGHTNESS = ${profile.statusLedBrightness.max};
 constexpr uint8_t EXTERNAL_RGB_LED_PIN = ${profile.externalRgbLedPin};
 constexpr uint8_t EXTERNAL_RGB_LED_COUNT = ${profile.externalRgbLedCount};
 constexpr uint8_t MATRIX_ROW_COUNT = ${profile.matrix.rows.length};
@@ -246,6 +258,10 @@ export const HARDWARE_CONFIG = {
   layerCount: ${profile.layerCount},
   defaultEnabledLayers: ${json(profile.defaultEnabledLayers)} as readonly number[],
   defaultLayerColors: ${json(profile.defaultLayerColors)} as readonly (readonly [number, number, number])[],
+  statusLedBrightness: {
+    default: ${profile.statusLedBrightness.default},
+    max: ${profile.statusLedBrightness.max},
+  },
   matrix: {
     rowCount: ${profile.matrix.rows.length},
     columnCount: ${profile.matrix.columns.length},
@@ -316,7 +332,7 @@ The compiled default direction is ${profile.encoder.reversed ? "reversed" : "sta
 
 ## Status LED
 
-外付けWS2812Bのdata inputをGPIO ${profile.externalRgbLedPin}へ接続します。Firmwareは${profile.externalRgbLedCount} pixels分のdataを送り、全pixelへ同じlayer、Remapper、rescue状態を表示します。実装数が少ないchainでは余分なpixel dataは無視されます。Boardに内蔵WS2812がある場合は同じ表示をミラーします。
+外付けWS2812Bのdata inputをGPIO ${profile.externalRgbLedPin}へ接続します。Firmwareは${profile.externalRgbLedCount} pixels分のdataを送り、全pixelへ同じlayer、Remapper、rescue状態を表示します。実装数が少ないchainでは余分なpixel dataは無視されます。Boardに内蔵WS2812がある場合は同じ表示をミラーします。輝度上限は0-${profile.statusLedBrightness.max}で設定でき、既定値は${profile.statusLedBrightness.default}です。
 
 | Signal | GPIO | Pixels | Mode |
 | --- | ---: | ---: | --- |

@@ -147,6 +147,49 @@
   opacity: 0.55;
 }
 
+.hardware-panel dl div.hardware-brightness-row {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.hardware-brightness-row dd {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+}
+
+.hardware-brightness-control {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) 54px auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.hardware-brightness-control input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--selection);
+}
+
+.hardware-brightness-control input[type="number"] {
+  width: 54px;
+  min-height: 30px;
+  padding: 3px 5px;
+  text-align: right;
+}
+
+.hardware-brightness-control button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.hardware-brightness-row small {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
 .remap-strip {
   gap: 14px;
 }

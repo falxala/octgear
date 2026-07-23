@@ -47,12 +47,14 @@ struct KeymapSnapshot {
   uint8_t activeLayerIndex;
   uint8_t enabledMask;
   bool encoderReversedValue;
+  uint8_t statusLedBrightnessValue;
 };
 
 void captureKeymapSnapshot(KeymapSnapshot& snapshot) {
   snapshot.activeLayerIndex = activeLayer();
   snapshot.enabledMask = enabledLayerMask();
   snapshot.encoderReversedValue = encoderReversed();
+  snapshot.statusLedBrightnessValue = statusLedBrightness();
 
   for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
     snapshot.colors[layer] = layerColor(layer);
@@ -72,6 +74,7 @@ void restoreKeymapSnapshot(const KeymapSnapshot& snapshot) {
 
   setEnabledLayerMask(snapshot.enabledMask);
   setEncoderReversed(snapshot.encoderReversedValue);
+  setStatusLedBrightness(snapshot.statusLedBrightnessValue);
   setActiveLayer(snapshot.activeLayerIndex);
 }
 
@@ -112,6 +115,7 @@ void handleGetState() {
     Config::MATRIX_ROW_COUNT,
     enabledLayerMask(),
     static_cast<uint8_t>(encoderReversed() ? 1 : 0),
+    statusLedBrightness(),
   };
 
   sendConfigResponse(ConfigCommand::GetState, ConfigStatus::Ok, payload, sizeof(payload));
@@ -241,6 +245,7 @@ void handleResetConfiguration() {
     return;
   }
 
+  applyStatusLedBrightness();
   clearStatusLedPreview();
   const uint8_t payload[] = { activeLayer(), enabledLayerMask() };
   sendConfigResponse(ConfigCommand::ResetConfiguration, ConfigStatus::Ok, payload, sizeof(payload));
@@ -263,6 +268,31 @@ void handleSetEncoderReversed(const uint8_t* buffer, uint16_t size) {
 
   const uint8_t payload[] = { static_cast<uint8_t>(reversed ? 1 : 0) };
   sendConfigResponse(ConfigCommand::SetEncoderReversed, ConfigStatus::Ok, payload, sizeof(payload));
+}
+
+void handleSetStatusLedBrightness(const uint8_t* buffer, uint16_t size) {
+  if (size < 2) {
+    sendConfigResponse(ConfigCommand::SetStatusLedBrightness, ConfigStatus::InvalidLength, nullptr, 0);
+    return;
+  }
+
+  const uint8_t brightness = buffer[1];
+  if (brightness > Config::MAX_STATUS_LED_BRIGHTNESS) {
+    sendConfigResponse(ConfigCommand::SetStatusLedBrightness, ConfigStatus::OutOfRange, nullptr, 0);
+    return;
+  }
+
+  const uint8_t previous = statusLedBrightness();
+  setStatusLedBrightness(brightness);
+  if (!saveStatusLedBrightnessToStorage()) {
+    setStatusLedBrightness(previous);
+    sendConfigResponse(ConfigCommand::SetStatusLedBrightness, ConfigStatus::StorageError, nullptr, 0);
+    return;
+  }
+
+  applyStatusLedBrightness();
+  const uint8_t payload[] = { statusLedBrightness() };
+  sendConfigResponse(ConfigCommand::SetStatusLedBrightness, ConfigStatus::Ok, payload, sizeof(payload));
 }
 
 void handleGetKey(const uint8_t* buffer, uint16_t size) {
@@ -465,6 +495,9 @@ void setReportCallback(uint8_t reportId, hid_report_type_t reportType, uint8_t c
       break;
     case ConfigCommand::SetEncoderReversed:
       handleSetEncoderReversed(buffer, size);
+      break;
+    case ConfigCommand::SetStatusLedBrightness:
+      handleSetStatusLedBrightness(buffer, size);
       break;
     default:
       sendConfigResponse(command, ConfigStatus::UnknownCommand, nullptr, 0);

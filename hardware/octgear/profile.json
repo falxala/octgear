@@ -12,6 +12,10 @@
     [0, 255, 220],
     [255, 70, 140]
   ],
+  "statusLedBrightness": {
+    "default": 32,
+    "max": 128
+  },
   "externalRgbLed": true,
   "externalRgbLedPin": 14,
   "externalRgbLedCount": 5,

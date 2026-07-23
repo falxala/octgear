@@ -18,6 +18,7 @@ export enum ConfigCommand {
   PreviewLayerColor = 0x0d,
   ResetConfiguration = 0x0e,
   SetEncoderReversed = 0x0f,
+  SetStatusLedBrightness = 0x10,
 }
 
 export enum ConfigStatus {

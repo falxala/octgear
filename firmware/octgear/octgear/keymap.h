@@ -23,6 +23,8 @@ bool setLayerColor(uint8_t layer, const LayerColor& color);
 void resetLayerColors();
 bool encoderReversed();
 void setEncoderReversed(bool reversed);
+uint8_t statusLedBrightness();
+void setStatusLedBrightness(uint8_t brightness);
 const KeyAssignment& assignmentFor(uint8_t layer, uint8_t keyIndex);
 bool setAssignment(uint8_t layer, uint8_t keyIndex, const KeyAssignment& assignment);
 void clearKeymap();

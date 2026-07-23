@@ -6,14 +6,26 @@ import { t } from "../../shared/i18n";
 type HardwarePanelProps = {
   deviceState: DeviceState | null;
   encoderDirectionUpdating: boolean;
+  statusLedBrightness: number;
+  statusLedBrightnessUpdating: boolean;
   onEncoderReversedChange: (reversed: boolean) => void;
+  onStatusLedBrightnessChange: (brightness: number) => void;
+  onStatusLedBrightnessApply: () => void;
 };
 
 export function HardwarePanel({
   deviceState,
   encoderDirectionUpdating,
+  statusLedBrightness,
+  statusLedBrightnessUpdating,
   onEncoderReversedChange,
+  onStatusLedBrightnessChange,
+  onStatusLedBrightnessApply,
 }: HardwarePanelProps) {
+  const brightnessSupported = deviceState?.statusLedBrightnessSupported ?? false;
+  const brightnessChanged =
+    brightnessSupported && statusLedBrightness !== deviceState?.statusLedBrightness;
+
   return (
     <aside className="panel hardware-panel">
       <div className="panel-meta">
@@ -43,6 +55,43 @@ export function HardwarePanel({
             </label>
           </dd>
         </div>
+        <div className="hardware-brightness-row">
+          <dt>{t.hardware.statusLedBrightness}</dt>
+          <dd>
+            <div className="hardware-brightness-control">
+              <input
+                type="range"
+                min={0}
+                max={HARDWARE_CONFIG.statusLedBrightness.max}
+                value={statusLedBrightness}
+                aria-label={t.hardware.statusLedBrightness}
+                disabled={!brightnessSupported || statusLedBrightnessUpdating}
+                onChange={(event) => onStatusLedBrightnessChange(Number(event.target.value))}
+              />
+              <input
+                type="number"
+                min={0}
+                max={HARDWARE_CONFIG.statusLedBrightness.max}
+                value={statusLedBrightness}
+                aria-label={t.hardware.statusLedBrightnessValue}
+                disabled={!brightnessSupported || statusLedBrightnessUpdating}
+                onChange={(event) => onStatusLedBrightnessChange(Number(event.target.value))}
+              />
+              <button
+                type="button"
+                disabled={!brightnessChanged || statusLedBrightnessUpdating}
+                onClick={onStatusLedBrightnessApply}
+              >
+                {statusLedBrightnessUpdating ? t.hardware.applying : t.hardware.apply}
+              </button>
+            </div>
+            <small>
+              {brightnessSupported
+                ? t.hardware.statusLedBrightnessRange(HARDWARE_CONFIG.statusLedBrightness.max)
+                : t.hardware.statusLedBrightnessUnsupported}
+            </small>
+          </dd>
+        </div>
         <div>
           <dt>{t.hardware.matrix}</dt>
           <dd>{t.hardware.matrixValue(
@@ -67,7 +116,11 @@ export function HardwarePanel({
         </div>
         <div>
           <dt>{t.hardware.externalRgb}</dt>
-          <dd>{t.hardware.none}</dd>
+          <dd>
+            {HARDWARE_CONFIG.externalRgbLed
+              ? t.hardware.externalRgbValue(HARDWARE_CONFIG.externalRgbLedCount)
+              : t.hardware.none}
+          </dd>
         </div>
         <div>
           <dt>{t.hardware.oled}</dt>

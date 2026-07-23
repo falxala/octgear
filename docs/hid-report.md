@@ -48,7 +48,7 @@ byte 3..31  response payload
 
 | Value | Name | Request payload | Response payload |
 | ---: | --- | --- | --- |
-| `0x01` | `GetState` | none | `activeLayer, layerCount, keyCount, matrixRowCount, enabledLayerMask, encoderReversed` |
+| `0x01` | `GetState` | none | `activeLayer, layerCount, keyCount, matrixRowCount, enabledLayerMask, encoderReversed, statusLedBrightness` |
 | `0x02` | `SetLayer` | `layer` | `layer` |
 | `0x03` | `GetKey` | `layer, keyIndex` | key assignment payload |
 | `0x04` | `SetKey` | key assignment payload | `layer, keyIndex` |
@@ -63,6 +63,7 @@ byte 3..31  response payload
 | `0x0d` | `PreviewLayerColor` | `layer, red, green, blue` or none | previewed values or none |
 | `0x0e` | `ResetConfiguration` | none | `activeLayer, enabledLayerMask` |
 | `0x0f` | `SetEncoderReversed` | `reversed` | `reversed` |
+| `0x10` | `SetStatusLedBrightness` | `brightness` | `brightness` |
 
 通常の同期commandは、requestと同じcommandをbyte 0に持つresponseを1つ返します。`RemapperHeartbeat`と`EnterBootloader`は例外です。Heartbeatは応答を返さず、bootloader commandはdeviceが再起動するためresponseを待ちません。
 
@@ -84,7 +85,9 @@ Layer colorの各channelは`0-255`です。RGBがすべて`0`の場合、通常m
 
 `encoderReversed`と`reversed`は`0`がprofileの配線どおり、`1`がA/Bの回転eventを反転した状態です。`SetEncoderReversed`は変更をFlashへ即座に保存します。
 
-`ResetConfiguration`は全assignment、layer有効mask、layer RGB色、Encoder方向をcompile済みの既定値へ戻し、保存領域全体へ書き込みます。Active layerはLayer 0へ戻ります。
+`statusLedBrightness`と`brightness`は`0-128`です。`0`は消灯、既定値は`32`です。`SetStatusLedBrightness`は変更をFlashへ即座に保存し、外付けWS2812Bと内蔵mirrorへ適用します。
+
+`ResetConfiguration`は全assignment、layer有効mask、layer RGB色、LED輝度上限、Encoder方向をcompile済みの既定値へ戻し、保存領域全体へ書き込みます。Active layerはLayer 0へ戻ります。
 
 ## Session Lifecycle
 

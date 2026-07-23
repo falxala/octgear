@@ -23,8 +23,8 @@ void sleepBetweenScans(bool remapperActive) {
 }  // namespace
 
 void setup() {
-  beginStatusLed();
   beginKeymap();
+  beginStatusLed();
   beginKeyScanner();
   const bool rescueBoot = readmeDriveRequestedAtBoot();
   if (rescueBoot) {

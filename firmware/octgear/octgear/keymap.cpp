@@ -10,6 +10,7 @@ static_assert(Config::LAYER_COUNT > 0 && Config::LAYER_COUNT <= 8, "Layer mask s
 constexpr uint8_t ALL_LAYERS_ENABLED_MASK = static_cast<uint8_t>((1U << Config::LAYER_COUNT) - 1U);
 uint8_t currentEnabledLayerMask = Config::DEFAULT_ENABLED_LAYER_MASK;
 bool currentEncoderReversed = Config::ENCODER_REVERSED;
+uint8_t currentStatusLedBrightness = Config::DEFAULT_STATUS_LED_BRIGHTNESS;
 LayerColor currentLayerColors[Config::LAYER_COUNT];
 KeyAssignment keymap[Config::LAYER_COUNT][Config::KEY_COUNT];
 
@@ -65,6 +66,7 @@ void resetKeymapToDefaults() {
   currentLayer = 0;
   currentEnabledLayerMask = Config::DEFAULT_ENABLED_LAYER_MASK;
   currentEncoderReversed = Config::ENCODER_REVERSED;
+  currentStatusLedBrightness = Config::DEFAULT_STATUS_LED_BRIGHTNESS;
   resetLayerColors();
   setDefaultKeymap();
 }
@@ -102,6 +104,16 @@ bool encoderReversed() {
 
 void setEncoderReversed(bool reversed) {
   currentEncoderReversed = reversed;
+}
+
+uint8_t statusLedBrightness() {
+  return currentStatusLedBrightness;
+}
+
+void setStatusLedBrightness(uint8_t brightness) {
+  currentStatusLedBrightness = brightness > Config::MAX_STATUS_LED_BRIGHTNESS
+    ? Config::MAX_STATUS_LED_BRIGHTNESS
+    : brightness;
 }
 
 uint8_t activeLayer() {

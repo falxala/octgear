@@ -62,7 +62,7 @@ Save時はdeviceが返したlayer / key countへnormalizeし、assignment、laye
 
 Read左のoverflow menuから初期化を選ぶと、確認dialogを経て全assignment、layer有効状態、RGB色、Encoder方向をfirmwareの既定値へ戻し、実機へ保存してからUIを再読込します。
 
-Hardware panelのEncoder方向checkboxは変更時に即座に実機へ保存します。既定値はhardware profileの`encoder.reversed`です。
+Hardware panelのEncoder方向checkboxは変更時に即座に実機へ保存します。既定値はhardware profileの`encoder.reversed`です。LED輝度上限は`0-128`で編集し、「適用」で実機へ保存します。`0`は消灯、既定値は`32`です。
 
 ## Firmware Updater
 

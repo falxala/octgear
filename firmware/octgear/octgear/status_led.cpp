@@ -12,6 +12,7 @@ uint8_t colorWheelPosition = 0;
 bool idleShown = false;
 bool previewActive = false;
 uint8_t displayedLayer = 0xFF;
+uint32_t displayedColor = 0;
 Adafruit_NeoPixel statusPixel(
   Config::EXTERNAL_RGB_LED_COUNT,
   Config::STATUS_LED_PIN,
@@ -22,6 +23,7 @@ Adafruit_NeoPixel builtInStatusPixel(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 #endif
 
 void showPixelColor(uint32_t color) {
+  displayedColor = color;
   for (uint8_t pixel = 0; pixel < Config::EXTERNAL_RGB_LED_COUNT; ++pixel) {
     statusPixel.setPixelColor(pixel, color);
   }
@@ -79,16 +81,26 @@ void setRescueLed() {
 
 void beginStatusLed() {
   statusPixel.begin();
-  statusPixel.setBrightness(Config::STATUS_LED_BRIGHTNESS);
+  statusPixel.setBrightness(statusLedBrightness());
 
 #if defined(PIN_NEOPIXEL)
   if (PIN_NEOPIXEL != Config::STATUS_LED_PIN) {
     builtInStatusPixel.begin();
-    builtInStatusPixel.setBrightness(Config::STATUS_LED_BRIGHTNESS);
+    builtInStatusPixel.setBrightness(statusLedBrightness());
   }
 #endif
 
   setStatusLed(false);
+}
+
+void applyStatusLedBrightness() {
+  statusPixel.setBrightness(statusLedBrightness());
+#if defined(PIN_NEOPIXEL)
+  if (PIN_NEOPIXEL != Config::STATUS_LED_PIN) {
+    builtInStatusPixel.setBrightness(statusLedBrightness());
+  }
+#endif
+  showPixelColor(displayedColor);
 }
 
 void setStatusLed(bool on) {

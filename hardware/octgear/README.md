@@ -2,7 +2,7 @@
 
 The materials in this directory are provided under the [OctGear Hardware License 1.0](../../HARDWARE-LICENSE.md). Personal, non-commercial builds are permitted. Commercial manufacture or sale of the reference hardware without material hardware changes is prohibited.
 
-現行2 x 4 key matrix + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control、matrix pin mapping、layer count、default enabled layers、default layer colors、外付けWS2812B GPIO / pixel countを管理します。
+現行2 x 4 key matrix + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control、matrix pin mapping、layer count、default enabled layers、default layer colors、LED輝度既定値 / 上限、外付けWS2812B GPIO / pixel countを管理します。
 
 ## Files
 
