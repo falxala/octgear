@@ -9,7 +9,7 @@ constexpr uint8_t KEYBOARD_REPORT_SLOTS = 6;
 constexpr uint8_t CONFIG_REPORT_SIZE = 32;
 
 constexpr uint8_t STATUS_LED_PIN = EXTERNAL_RGB_LED_PIN;
-constexpr uint8_t STATUS_LED_BRIGHTNESS = 200;
+constexpr uint8_t STATUS_LED_BRIGHTNESS = 64;
 constexpr uint8_t STATUS_RESCUE_GREEN = 18;
 
 constexpr uint16_t DEBOUNCE_US = 5000;
