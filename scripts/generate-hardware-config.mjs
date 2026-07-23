@@ -47,6 +47,10 @@ function validateProfile(value) {
   }
   if (value.externalRgbLed) {
     requireInteger(value.externalRgbLedPin, "externalRgbLedPin");
+    requireInteger(value.externalRgbLedCount, "externalRgbLedCount");
+    if (value.externalRgbLedCount < 1 || value.externalRgbLedCount > 255) {
+      throw new Error("externalRgbLedCount must be within 1-255");
+    }
   }
 
   if (value.matrix.diodeDirection !== "none") {
@@ -181,6 +185,7 @@ constexpr uint8_t DEFAULT_LAYER_COLORS[LAYER_COUNT][3] = {
 ${profile.defaultLayerColors.map((color) => `  { ${color.join(", ")} },`).join("\n")}
 };
 constexpr uint8_t EXTERNAL_RGB_LED_PIN = ${profile.externalRgbLedPin};
+constexpr uint8_t EXTERNAL_RGB_LED_COUNT = ${profile.externalRgbLedCount};
 constexpr uint8_t MATRIX_ROW_COUNT = ${profile.matrix.rows.length};
 constexpr uint8_t MATRIX_COLUMN_COUNT = ${profile.matrix.columns.length};
 
@@ -247,6 +252,7 @@ export const HARDWARE_CONFIG = {
     diodeDirection: ${json(profile.matrix.diodeDirection)},
   },
   externalRgbLed: ${profile.externalRgbLed ? "true" : "false"},
+  externalRgbLedCount: ${profile.externalRgbLedCount},
   oled: ${profile.oled ? "true" : "false"},
   encoder: {
     enabled: ${profile.encoder.enabled ? "true" : "false"},
@@ -310,11 +316,11 @@ The compiled default direction is ${profile.encoder.reversed ? "reversed" : "sta
 
 ## Status LED
 
-外付けWS2812Bのdata inputをGPIO ${profile.externalRgbLedPin}へ接続します。Firmwareはlayer、Remapper、rescueの状態をこのLEDへ表示します。Boardに内蔵WS2812がある場合は同じ表示をミラーします。
+外付けWS2812Bのdata inputをGPIO ${profile.externalRgbLedPin}へ接続します。Firmwareは${profile.externalRgbLedCount} pixels分のdataを送り、全pixelへ同じlayer、Remapper、rescue状態を表示します。実装数が少ないchainでは余分なpixel dataは無視されます。Boardに内蔵WS2812がある場合は同じ表示をミラーします。
 
-| Signal | GPIO | Mode |
-| --- | ---: | --- |
-| WS2812B DIN | ${profile.externalRgbLedPin} | 800 kHz GRB data |
+| Signal | GPIO | Pixels | Mode |
+| --- | ---: | ---: | --- |
+| WS2812B DIN | ${profile.externalRgbLedPin} | ${profile.externalRgbLedCount} | 800 kHz GRB data |
 
 ## Removed Parts
 

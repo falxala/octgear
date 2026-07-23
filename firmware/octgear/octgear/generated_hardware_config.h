@@ -21,6 +21,7 @@ constexpr uint8_t DEFAULT_LAYER_COLORS[LAYER_COUNT][3] = {
   { 255, 70, 140 },
 };
 constexpr uint8_t EXTERNAL_RGB_LED_PIN = 14;
+constexpr uint8_t EXTERNAL_RGB_LED_COUNT = 5;
 constexpr uint8_t MATRIX_ROW_COUNT = 2;
 constexpr uint8_t MATRIX_COLUMN_COUNT = 4;
 

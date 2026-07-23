@@ -12,13 +12,19 @@ uint8_t colorWheelPosition = 0;
 bool idleShown = false;
 bool previewActive = false;
 uint8_t displayedLayer = 0xFF;
-Adafruit_NeoPixel statusPixel(1, Config::STATUS_LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel statusPixel(
+  Config::EXTERNAL_RGB_LED_COUNT,
+  Config::STATUS_LED_PIN,
+  NEO_GRB + NEO_KHZ800
+);
 #if defined(PIN_NEOPIXEL)
 Adafruit_NeoPixel builtInStatusPixel(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 #endif
 
 void showPixelColor(uint32_t color) {
-  statusPixel.setPixelColor(0, color);
+  for (uint8_t pixel = 0; pixel < Config::EXTERNAL_RGB_LED_COUNT; ++pixel) {
+    statusPixel.setPixelColor(pixel, color);
+  }
   statusPixel.show();
 
 #if defined(PIN_NEOPIXEL)

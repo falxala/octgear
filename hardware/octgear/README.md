@@ -2,7 +2,7 @@
 
 The materials in this directory are provided under the [OctGear Hardware License 1.0](../../HARDWARE-LICENSE.md). Personal, non-commercial builds are permitted. Commercial manufacture or sale of the reference hardware without material hardware changes is prohibited.
 
-現行2 x 4 key matrix + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control、matrix pin mapping、layer count、default enabled layers、default layer colors、外付けWS2812B GPIOを管理します。
+現行2 x 4 key matrix + rotary encoder版のhardware metadataです。PCB designそのものではなく、firmwareとWeb UIが共有するlogical control、matrix pin mapping、layer count、default enabled layers、default layer colors、外付けWS2812B GPIO / pixel countを管理します。
 
 ## Files
 
@@ -37,7 +37,7 @@ Generated filesは直接編集しません。Generatorはindex順とencoder cont
 - Columnは`INPUT_PULLUP`、scan対象Rowだけを`OUTPUT LOW`にする
 - ダイオードがないため矩形同時押しは区別できず、Firmwareは曖昧な間のMatrix状態を保持する
 - Encoder A/B/SWは`INPUT_PULLUP`、専用Common GPIOは常時`OUTPUT LOW`
-- External WS2812Bのdata inputはGPIO 14へ接続する
+- External WS2812Bのdata inputはGPIO 14へ接続し、5 pixels分のdataを送る。4連実機では5番目のdataは無視される
 - Status表示は外付けWS2812Bへ出力し、対応boardではonboard WS2812にもミラーする
 - OLEDは使用しない
 - Key 5は通常inputとrescue boot triggerを兼用

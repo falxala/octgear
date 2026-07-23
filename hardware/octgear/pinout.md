@@ -48,11 +48,11 @@ The compiled default direction is standard. Remapper can change and persist the 
 
 ## Status LED
 
-外付けWS2812Bのdata inputをGPIO 14へ接続します。Firmwareはlayer、Remapper、rescueの状態をこのLEDへ表示します。Boardに内蔵WS2812がある場合は同じ表示をミラーします。
+外付けWS2812Bのdata inputをGPIO 14へ接続します。Firmwareは5 pixels分のdataを送り、全pixelへ同じlayer、Remapper、rescue状態を表示します。実装数が少ないchainでは余分なpixel dataは無視されます。Boardに内蔵WS2812がある場合は同じ表示をミラーします。
 
-| Signal | GPIO | Mode |
-| --- | ---: | --- |
-| WS2812B DIN | 14 | 800 kHz GRB data |
+| Signal | GPIO | Pixels | Mode |
+| --- | ---: | ---: | --- |
+| WS2812B DIN | 14 | 5 | 800 kHz GRB data |
 
 ## Removed Parts
 
