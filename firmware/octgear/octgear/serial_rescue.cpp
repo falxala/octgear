@@ -190,7 +190,7 @@ void handleDump() {
 
 void handleLayer(char*& cursor) {
   uint8_t layer = 0;
-  if (!parseByte(cursor, layer) || layer >= Config::LAYER_COUNT) {
+  if (!parseByte(cursor, layer) || !layerEnabled(layer)) {
     Serial.println(F("ERR layer"));
     return;
   }
@@ -211,12 +211,19 @@ void handleGet(char*& cursor) {
 }
 
 void saveParsedAssignment(uint8_t layer, uint8_t keyIndex, const KeyAssignment& assignment) {
+  if (layer >= Config::LAYER_COUNT || keyIndex >= Config::KEY_COUNT) {
+    Serial.println(F("ERR range"));
+    return;
+  }
+
+  const KeyAssignment previousAssignment = assignmentFor(layer, keyIndex);
   if (!setAssignment(layer, keyIndex, assignment)) {
     Serial.println(F("ERR range"));
     return;
   }
 
   if (!saveAssignmentToStorage(layer, keyIndex)) {
+    setAssignment(layer, keyIndex, previousAssignment);
     Serial.println(F("ERR storage"));
     return;
   }

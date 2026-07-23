@@ -13,6 +13,7 @@ extern uint8_t _FS_end;
 namespace {
 
 constexpr uint8_t STORAGE_MAGIC[4] = { 'C', 'M', '8', 'J' };
+constexpr uint8_t STORAGE_SELF_TEST_MAGIC[4] = { 'C', 'M', '8', 'T' };
 constexpr uint8_t STORAGE_VERSION = 1;
 constexpr uint8_t SLOT_COUNT = 3;
 constexpr uint32_t SLOT_SIZE = FLASH_SECTOR_SIZE;
@@ -39,6 +40,15 @@ static_assert(PROGRAM_SIZE <= static_cast<int>(SLOT_SIZE), "Program data must fi
 bool storageAvailable = false;
 int8_t currentSlot = -1;
 uint32_t currentGeneration = 0;
+
+enum class SlotKind : uint8_t {
+  Normal,
+  SelfTest,
+};
+
+const uint8_t* magicForSlotKind(SlotKind kind) {
+  return kind == SlotKind::SelfTest ? STORAGE_SELF_TEST_MAGIC : STORAGE_MAGIC;
+}
 
 int recordAddress(uint8_t layer, uint8_t keyIndex) {
   const int recordIndex = (layer * Config::KEY_COUNT) + keyIndex;
@@ -101,10 +111,11 @@ bool validKind(uint8_t value) {
   return value <= static_cast<uint8_t>(AssignmentKind::LayerPrevious);
 }
 
-bool slotValid(uint8_t slot) {
+bool slotValid(uint8_t slot, SlotKind kind) {
   const uint8_t* data = slotData(slot);
+  const uint8_t* expectedMagic = magicForSlotKind(kind);
   for (uint8_t i = 0; i < sizeof(STORAGE_MAGIC); i++) {
-    if (data[i] != STORAGE_MAGIC[i]) {
+    if (data[i] != expectedMagic[i]) {
       return false;
     }
   }
@@ -130,7 +141,7 @@ int8_t findNewestSlot() {
   uint32_t newestGeneration = 0;
 
   for (uint8_t slot = 0; slot < SLOT_COUNT; slot++) {
-    if (!slotValid(slot)) {
+    if (!slotValid(slot, SlotKind::Normal)) {
       continue;
     }
 
@@ -178,9 +189,9 @@ void writeAssignmentRecord(uint8_t* data, int address, const KeyAssignment& assi
   data[address + 10] = assignment.targetLayer;
 }
 
-void buildSlotData(uint8_t* data, uint32_t generation) {
+void buildSlotData(uint8_t* data, uint32_t generation, SlotKind kind) {
   memset(data, 0xFF, PROGRAM_SIZE);
-  memcpy(data, STORAGE_MAGIC, sizeof(STORAGE_MAGIC));
+  memcpy(data, magicForSlotKind(kind), sizeof(STORAGE_MAGIC));
   data[4] = STORAGE_VERSION;
   data[5] = Config::LAYER_COUNT;
   data[6] = Config::KEY_COUNT;
@@ -207,14 +218,35 @@ void buildSlotData(uint8_t* data, uint32_t generation) {
   writeUint32(data, CRC_ADDRESS, calculateSlotCrc(data));
 }
 
-bool writeSlot(uint8_t slot, const uint8_t* data) {
+bool writeSlot(uint8_t slot, const uint8_t* data, SlotKind kind) {
   noInterrupts();
   rp2040.idleOtherCore();
   flash_range_erase(slotFlashOffset(slot), SLOT_SIZE);
   flash_range_program(slotFlashOffset(slot), data, PROGRAM_SIZE);
   rp2040.resumeOtherCore();
   interrupts();
-  return slotValid(slot);
+  return slotValid(slot, kind);
+}
+
+bool saveCurrentKeymapToStorage(SlotKind kind) {
+  if (!storageAvailable) {
+    return false;
+  }
+
+  const uint8_t targetSlot = currentSlot < 0
+    ? 0
+    : static_cast<uint8_t>((currentSlot + 1) % SLOT_COUNT);
+  const uint32_t nextGeneration = currentGeneration + 1;
+  uint8_t data[PROGRAM_SIZE];
+  buildSlotData(data, nextGeneration, kind);
+
+  if (!writeSlot(targetSlot, data, kind)) {
+    return false;
+  }
+
+  currentSlot = static_cast<int8_t>(targetSlot);
+  currentGeneration = nextGeneration;
+  return true;
 }
 
 }  // namespace
@@ -262,24 +294,7 @@ bool loadKeymapFromStorage() {
 }
 
 bool saveKeymapToStorage() {
-  if (!storageAvailable) {
-    return false;
-  }
-
-  const uint8_t targetSlot = currentSlot < 0
-    ? 0
-    : static_cast<uint8_t>((currentSlot + 1) % SLOT_COUNT);
-  const uint32_t nextGeneration = currentGeneration + 1;
-  uint8_t data[PROGRAM_SIZE];
-  buildSlotData(data, nextGeneration);
-
-  if (!writeSlot(targetSlot, data)) {
-    return false;
-  }
-
-  currentSlot = static_cast<int8_t>(targetSlot);
-  currentGeneration = nextGeneration;
-  return true;
+  return saveCurrentKeymapToStorage(SlotKind::Normal);
 }
 
 bool saveAssignmentToStorage(uint8_t layer, uint8_t keyIndex) {
@@ -342,7 +357,7 @@ bool runKeymapStorageSelfTest() {
   setEnabledLayerMask(patternLayerMask);
   setEncoderReversed(patternEncoderReversed);
 
-  bool ok = saveKeymapToStorage();
+  bool ok = saveCurrentKeymapToStorage(SlotKind::SelfTest);
   if (ok) {
     clearKeymap();
     setEnabledLayerMask(0x01);

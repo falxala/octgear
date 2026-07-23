@@ -74,7 +74,7 @@ Keymap、layer enable mask、layer RGB colors、Encoder方向はexternal SPI Fla
 
 標準buildはArduino coreがfilesystem用として扱う64KBをFirmware領域から分離して予約します。Filesystemはmountせず、その先頭12KBをjournalに直接使用します。設定変更時はRAM上の設定全体を次slotへ書き、1回の保存で消去するsectorを1つに限定します。保存形式が無効または未初期化ならcompile済みdefaultで初期化します。
 
-Diagnostics / Serial rescueのstorage self-testはtest patternのwrite、readback、元keymapのrestoreを行います。実Flashへ書くため、必要な検査時だけ実行します。
+Diagnostics / Serial rescueのstorage self-testはtest patternのwrite、readback、元keymapのrestoreを行います。Test patternのslotは通常journalと異なるmagicを持ち、復元前に電源が切れても通常起動では読み込みません。実Flashへ書くため、必要な検査時だけ実行します。
 
 ## Further Reading
 

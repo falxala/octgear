@@ -239,6 +239,14 @@ void serviceConsumerReports() {
   }
 }
 
+bool hidOutputQueueIdle() {
+  return !keyboardReportDirty &&
+         !consumerReportDirty &&
+         !consumerTapActive &&
+         consumerTapQueueCount == 0 &&
+         latestHeldConsumerUsage() == lastConsumerReportValue;
+}
+
 bool flushKeyboardReport(Adafruit_USBD_HID& usbHid) {
   if (!keyboardReportDirty || !usbHid.ready()) {
     return false;

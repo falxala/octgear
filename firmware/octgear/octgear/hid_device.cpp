@@ -23,15 +23,57 @@ Adafruit_USBD_HID usbHid(
   false
 );
 uint32_t lastRemapperHeartbeatMs = 0;
-bool wakeKeyChangePending = false;
-Config::KeyMask wakeOldMask = 0;
-Config::KeyMask wakeNewMask = 0;
-uint8_t wakeLayer = 0;
+constexpr uint8_t WAKE_KEY_CHANGE_QUEUE_SIZE = 32;
+struct WakeKeyChange {
+  Config::KeyMask oldMask;
+  Config::KeyMask newMask;
+};
+WakeKeyChange wakeKeyChangeQueue[WAKE_KEY_CHANGE_QUEUE_SIZE];
+uint8_t wakeKeyChangeQueueHead = 0;
+uint8_t wakeKeyChangeQueueCount = 0;
+bool wakeKeyChangeQueueOverflowed = false;
+Config::KeyMask wakeOverflowBaseMask = 0;
+Config::KeyMask wakeOverflowFinalMask = 0;
+bool replayingWakeKeyChange = false;
 bool momentaryLayerActive[Config::KEY_COUNT] = { false };
 uint8_t momentaryLayerTargets[Config::KEY_COUNT] = { 0 };
 uint32_t momentaryLayerOrder[Config::KEY_COUNT] = { 0 };
 uint32_t nextMomentaryLayerOrder = 1;
 uint8_t momentaryBaseLayer = 0;
+
+struct KeymapSnapshot {
+  KeyAssignment assignments[Config::LAYER_COUNT][Config::KEY_COUNT];
+  LayerColor colors[Config::LAYER_COUNT];
+  uint8_t activeLayerIndex;
+  uint8_t enabledMask;
+  bool encoderReversedValue;
+};
+
+void captureKeymapSnapshot(KeymapSnapshot& snapshot) {
+  snapshot.activeLayerIndex = activeLayer();
+  snapshot.enabledMask = enabledLayerMask();
+  snapshot.encoderReversedValue = encoderReversed();
+
+  for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    snapshot.colors[layer] = layerColor(layer);
+    for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
+      snapshot.assignments[layer][keyIndex] = assignmentFor(layer, keyIndex);
+    }
+  }
+}
+
+void restoreKeymapSnapshot(const KeymapSnapshot& snapshot) {
+  for (uint8_t layer = 0; layer < Config::LAYER_COUNT; layer++) {
+    setLayerColor(layer, snapshot.colors[layer]);
+    for (uint8_t keyIndex = 0; keyIndex < Config::KEY_COUNT; keyIndex++) {
+      setAssignment(layer, keyIndex, snapshot.assignments[layer][keyIndex]);
+    }
+  }
+
+  setEnabledLayerMask(snapshot.enabledMask);
+  setEncoderReversed(snapshot.encoderReversedValue);
+  setActiveLayer(snapshot.activeLayerIndex);
+}
 
 bool sendConfigReportWhenReady(const uint8_t* report, uint8_t length) {
   for (uint8_t attempt = 0; attempt < Config::CONFIG_RESPONSE_READY_RETRIES; attempt++) {
@@ -189,14 +231,17 @@ void handlePreviewLayerColor(const uint8_t* buffer, uint16_t size) {
 }
 
 void handleResetConfiguration() {
+  KeymapSnapshot previous;
+  captureKeymapSnapshot(previous);
   resetKeymapToDefaults();
-  clearStatusLedPreview();
 
   if (!saveKeymapToStorage()) {
+    restoreKeymapSnapshot(previous);
     sendConfigResponse(ConfigCommand::ResetConfiguration, ConfigStatus::StorageError, nullptr, 0);
     return;
   }
 
+  clearStatusLedPreview();
   const uint8_t payload[] = { activeLayer(), enabledLayerMask() };
   sendConfigResponse(ConfigCommand::ResetConfiguration, ConfigStatus::Ok, payload, sizeof(payload));
 }
@@ -258,6 +303,11 @@ void handleSetKey(const uint8_t* buffer, uint16_t size) {
 
   const uint8_t layer = buffer[1];
   const uint8_t keyIndex = buffer[2];
+  if (layer >= Config::LAYER_COUNT || keyIndex >= Config::KEY_COUNT) {
+    sendConfigResponse(ConfigCommand::SetKey, ConfigStatus::OutOfRange, nullptr, 0);
+    return;
+  }
+
   KeyAssignment assignment = blankAssignment();
   assignment.kind = static_cast<AssignmentKind>(buffer[3]);
   assignment.modifier = buffer[4];
@@ -286,12 +336,14 @@ void handleSetKey(const uint8_t* buffer, uint16_t size) {
     return;
   }
 
+  const KeyAssignment previousAssignment = assignmentFor(layer, keyIndex);
   if (!setAssignment(layer, keyIndex, assignment)) {
     sendConfigResponse(ConfigCommand::SetKey, ConfigStatus::OutOfRange, nullptr, 0);
     return;
   }
 
   if (!saveAssignmentToStorage(layer, keyIndex)) {
+    setAssignment(layer, keyIndex, previousAssignment);
     sendConfigResponse(ConfigCommand::SetKey, ConfigStatus::StorageError, nullptr, 0);
     return;
   }
@@ -456,7 +508,6 @@ void pressMomentaryLayer(uint8_t keyIndex, uint8_t sourceLayer, uint8_t targetLa
   momentaryLayerActive[keyIndex] = true;
   momentaryLayerTargets[keyIndex] = targetLayer;
   momentaryLayerOrder[keyIndex] = nextMomentaryLayerOrder++;
-  queueAllKeyboardReleases();
   applyMomentaryLayerState();
 }
 
@@ -467,7 +518,6 @@ bool releaseMomentaryLayer(uint8_t keyIndex) {
 
   momentaryLayerActive[keyIndex] = false;
   momentaryLayerOrder[keyIndex] = 0;
-  queueAllKeyboardReleases();
   applyMomentaryLayerState();
   return true;
 }
@@ -514,26 +564,61 @@ void cyclePersistentLayerBackward() {
   setActiveLayer(previousEnabledLayer(activeLayer()));
 }
 
-void queueWakeKeyChange(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t layer) {
-  if (!wakeKeyChangePending) {
-    wakeOldMask = oldMask;
-  }
-
-  wakeNewMask = newMask;
-  wakeLayer = layer;
-  wakeKeyChangePending = true;
+bool wakeKeyChangePending() {
+  return wakeKeyChangeQueueCount != 0 || wakeKeyChangeQueueOverflowed;
 }
 
-void flushWakeKeyChange() {
-  if (!wakeKeyChangePending || TinyUSBDevice.suspended()) {
+void queueWakeKeyChange(Config::KeyMask oldMask, Config::KeyMask newMask) {
+  if (wakeKeyChangeQueueOverflowed) {
+    wakeOverflowFinalMask = newMask;
     return;
   }
 
-  const Config::KeyMask oldMask = wakeOldMask;
-  const Config::KeyMask newMask = wakeNewMask;
-  const uint8_t layer = wakeLayer;
-  wakeKeyChangePending = false;
-  sendKeyChanges(oldMask, newMask, layer);
+  if (wakeKeyChangeQueueCount >= WAKE_KEY_CHANGE_QUEUE_SIZE) {
+    wakeKeyChangeQueueOverflowed = true;
+    wakeOverflowBaseMask = oldMask;
+    wakeOverflowFinalMask = newMask;
+    return;
+  }
+
+  const uint8_t index = static_cast<uint8_t>(
+    (wakeKeyChangeQueueHead + wakeKeyChangeQueueCount) % WAKE_KEY_CHANGE_QUEUE_SIZE
+  );
+  wakeKeyChangeQueue[index] = { oldMask, newMask };
+  wakeKeyChangeQueueCount++;
+}
+
+void flushWakeKeyChange() {
+  if (!wakeKeyChangePending() ||
+      TinyUSBDevice.suspended() ||
+      !usbHid.ready() ||
+      !hidOutputQueueIdle()) {
+    return;
+  }
+
+  Config::KeyMask oldMask = 0;
+  Config::KeyMask newMask = 0;
+  if (wakeKeyChangeQueueCount != 0) {
+    const WakeKeyChange change = wakeKeyChangeQueue[wakeKeyChangeQueueHead];
+    wakeKeyChangeQueueHead = static_cast<uint8_t>(
+      (wakeKeyChangeQueueHead + 1) % WAKE_KEY_CHANGE_QUEUE_SIZE
+    );
+    wakeKeyChangeQueueCount--;
+    oldMask = change.oldMask;
+    newMask = change.newMask;
+  } else {
+    oldMask = wakeOverflowBaseMask;
+    newMask = wakeOverflowFinalMask;
+    wakeKeyChangeQueueOverflowed = false;
+  }
+
+  if (oldMask == newMask) {
+    return;
+  }
+
+  replayingWakeKeyChange = true;
+  sendKeyChanges(oldMask, newMask, activeLayer());
+  replayingWakeKeyChange = false;
 }
 
 }  // namespace
@@ -578,9 +663,12 @@ bool remapperConnected() {
 }
 
 void sendKeyChanges(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t layer) {
-  if (TinyUSBDevice.suspended()) {
-    queueWakeKeyChange(oldMask, newMask, layer);
-    TinyUSBDevice.remoteWakeup();
+  const bool suspended = TinyUSBDevice.suspended();
+  if (!replayingWakeKeyChange && (suspended || wakeKeyChangePending())) {
+    queueWakeKeyChange(oldMask, newMask);
+    if (suspended) {
+      TinyUSBDevice.remoteWakeup();
+    }
     return;
   }
 
@@ -627,11 +715,9 @@ void sendKeyChanges(Config::KeyMask oldMask, Config::KeyMask newMask, uint8_t la
         }
         break;
       case AssignmentKind::LayerCycle:
-        queueAllKeyboardReleases();
         cyclePersistentLayer();
         break;
       case AssignmentKind::LayerPrevious:
-        queueAllKeyboardReleases();
         cyclePersistentLayerBackward();
         break;
       case AssignmentKind::MomentaryLayer:

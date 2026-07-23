@@ -12,5 +12,6 @@ void queueConsumerRelease(uint8_t keyIndex);
 void queueAllConsumerReleases();
 void queueConsumerTap(uint16_t usage);
 void serviceConsumerReports();
+bool hidOutputQueueIdle();
 bool flushKeyboardReport(Adafruit_USBD_HID& usbHid);
 bool flushConsumerReport(Adafruit_USBD_HID& usbHid);
