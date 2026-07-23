@@ -37,7 +37,7 @@ Because the matrix has no diodes, rectangular multi-key combinations are electri
 
 Encoder A/B and SW are independent from the key matrix. A/B/SW use `INPUT_PULLUP`; Common is a dedicated `OUTPUT LOW` on GPIO 12.
 
-The compiled default direction is reversed. Remapper can change and persist the direction without rebuilding firmware.
+The compiled default direction is standard. Remapper can change and persist the direction without rebuilding firmware.
 
 | Signal | GPIO | Firmware control index |
 | --- | ---: | ---: |
@@ -46,11 +46,16 @@ The compiled default direction is reversed. Remapper can change and persist the 
 | B | 13 | CCW/CW: 8/9 |
 | SW | 10 | 10 |
 
+## Status LED
+
+外付けWS2812Bのdata inputをGPIO 14へ接続します。Firmwareはlayer、Remapper、rescueの状態をこのLEDへ表示します。Boardに内蔵WS2812がある場合は同じ表示をミラーします。
+
+| Signal | GPIO | Mode |
+| --- | ---: | --- |
+| WS2812B DIN | 14 | 800 kHz GRB data |
+
 ## Removed Parts
 
-新ハードウェアでは以下を使いません。
-
-- External RGB LED / WS2812B
 - OLED
 
-状態表示は本体LEDのみで行います。
+OLEDは使用しません。

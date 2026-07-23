@@ -8,26 +8,7 @@ namespace Config {
 constexpr uint8_t KEYBOARD_REPORT_SLOTS = 6;
 constexpr uint8_t CONFIG_REPORT_SIZE = 32;
 
-enum class StatusLedKind : uint8_t {
-  None,
-  Digital,
-  NeoPixel,
-};
-
-#if defined(PIN_NEOPIXEL)
-constexpr StatusLedKind STATUS_LED_KIND = StatusLedKind::NeoPixel;
-constexpr uint8_t STATUS_LED_PIN = PIN_NEOPIXEL;
-#elif defined(LED_BUILTIN)
-constexpr StatusLedKind STATUS_LED_KIND = StatusLedKind::Digital;
-constexpr uint8_t STATUS_LED_PIN = LED_BUILTIN;
-#elif defined(PIN_LED)
-constexpr StatusLedKind STATUS_LED_KIND = StatusLedKind::Digital;
-constexpr uint8_t STATUS_LED_PIN = PIN_LED;
-#else
-constexpr StatusLedKind STATUS_LED_KIND = StatusLedKind::None;
-constexpr uint8_t STATUS_LED_PIN = 255;
-#endif
-
+constexpr uint8_t STATUS_LED_PIN = EXTERNAL_RGB_LED_PIN;
 constexpr uint8_t STATUS_LED_BRIGHTNESS = 200;
 constexpr uint8_t STATUS_RESCUE_GREEN = 18;
 

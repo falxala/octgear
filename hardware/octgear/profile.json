@@ -12,7 +12,8 @@
     [0, 255, 220],
     [255, 70, 140]
   ],
-  "externalRgbLed": false,
+  "externalRgbLed": true,
+  "externalRgbLedPin": 14,
   "oled": false,
   "matrix": {
     "diodeDirection": "none",
@@ -45,7 +46,7 @@
     "bPin": 13,
     "switchPin": 10,
     "stepsPerDetent": 4,
-    "reversed": true,
+    "reversed": false,
     "controls": [
       { "id": "enc-ccw", "label": "CCW", "firmwareIndex": 8, "kind": "encoder", "notes": "Quadrature rotation event" },
       { "id": "enc-cw", "label": "CW", "firmwareIndex": 9, "kind": "encoder", "notes": "Quadrature rotation event" },

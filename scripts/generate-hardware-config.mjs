@@ -42,6 +42,12 @@ function validateProfile(value) {
   requireArray(value.matrix.rows, "matrix.rows");
   requireArray(value.matrix.columns, "matrix.columns");
   requireObject(value.encoder, "encoder");
+  if (typeof value.externalRgbLed !== "boolean") {
+    throw new Error("externalRgbLed must be a boolean");
+  }
+  if (value.externalRgbLed) {
+    requireInteger(value.externalRgbLedPin, "externalRgbLedPin");
+  }
 
   if (value.matrix.diodeDirection !== "none") {
     throw new Error("matrix.diodeDirection must be none");
@@ -138,6 +144,9 @@ function validateProfile(value) {
     registerPin(usedPins, value.encoder.bPin, "encoder.bPin");
     registerPin(usedPins, value.encoder.switchPin, "encoder.switchPin");
   }
+  if (value.externalRgbLed) {
+    registerPin(usedPins, value.externalRgbLedPin, "externalRgbLedPin");
+  }
 }
 
 function validateMatrixLine(line, index, name) {
@@ -171,6 +180,7 @@ constexpr uint8_t DEFAULT_ENABLED_LAYER_MASK = ${hexByte(defaultEnabledLayerMask
 constexpr uint8_t DEFAULT_LAYER_COLORS[LAYER_COUNT][3] = {
 ${profile.defaultLayerColors.map((color) => `  { ${color.join(", ")} },`).join("\n")}
 };
+constexpr uint8_t EXTERNAL_RGB_LED_PIN = ${profile.externalRgbLedPin};
 constexpr uint8_t MATRIX_ROW_COUNT = ${profile.matrix.rows.length};
 constexpr uint8_t MATRIX_COLUMN_COUNT = ${profile.matrix.columns.length};
 
@@ -298,14 +308,19 @@ The compiled default direction is ${profile.encoder.reversed ? "reversed" : "sta
 | B | ${profile.encoder.bPin} | CCW/CW: ${encoderControlById["enc-ccw"].firmwareIndex}/${encoderControlById["enc-cw"].firmwareIndex} |
 | SW | ${profile.encoder.switchPin} | ${encoderControlById["enc-sw"].firmwareIndex} |
 
+## Status LED
+
+外付けWS2812Bのdata inputをGPIO ${profile.externalRgbLedPin}へ接続します。Firmwareはlayer、Remapper、rescueの状態をこのLEDへ表示します。Boardに内蔵WS2812がある場合は同じ表示をミラーします。
+
+| Signal | GPIO | Mode |
+| --- | ---: | --- |
+| WS2812B DIN | ${profile.externalRgbLedPin} | 800 kHz GRB data |
+
 ## Removed Parts
 
-新ハードウェアでは以下を使いません。
-
-- External RGB LED / WS2812B
 - OLED
 
-状態表示は本体LEDのみで行います。
+OLEDは使用しません。
 `;
 }
 

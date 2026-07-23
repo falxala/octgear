@@ -13,6 +13,21 @@ bool idleShown = false;
 bool previewActive = false;
 uint8_t displayedLayer = 0xFF;
 Adafruit_NeoPixel statusPixel(1, Config::STATUS_LED_PIN, NEO_GRB + NEO_KHZ800);
+#if defined(PIN_NEOPIXEL)
+Adafruit_NeoPixel builtInStatusPixel(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+#endif
+
+void showPixelColor(uint32_t color) {
+  statusPixel.setPixelColor(0, color);
+  statusPixel.show();
+
+#if defined(PIN_NEOPIXEL)
+  if (PIN_NEOPIXEL != Config::STATUS_LED_PIN) {
+    builtInStatusPixel.setPixelColor(0, color);
+    builtInStatusPixel.show();
+  }
+#endif
+}
 
 uint32_t colorWheel(uint8_t position) {
   position = 255 - position;
@@ -31,13 +46,7 @@ uint32_t colorWheel(uint8_t position) {
 }
 
 void setLayerColorLed(const LayerColor& color) {
-  if (Config::STATUS_LED_KIND == Config::StatusLedKind::Digital) {
-    const bool on = color.red != 0 || color.green != 0 || color.blue != 0;
-    digitalWrite(Config::STATUS_LED_PIN, on ? HIGH : LOW);
-  } else if (Config::STATUS_LED_KIND == Config::StatusLedKind::NeoPixel) {
-    statusPixel.setPixelColor(0, statusPixel.Color(color.red, color.green, color.blue));
-    statusPixel.show();
-  }
+  showPixelColor(statusPixel.Color(color.red, color.green, color.blue));
 }
 
 void setKeyboardLayerLed(uint8_t layer) {
@@ -46,34 +55,27 @@ void setKeyboardLayerLed(uint8_t layer) {
 }
 
 void setRescueLed() {
-  if (Config::STATUS_LED_KIND == Config::StatusLedKind::Digital) {
-    digitalWrite(Config::STATUS_LED_PIN, HIGH);
-  } else if (Config::STATUS_LED_KIND == Config::StatusLedKind::NeoPixel) {
-    statusPixel.setPixelColor(0, statusPixel.Color(0, Config::STATUS_RESCUE_GREEN, 0));
-    statusPixel.show();
-  }
+  showPixelColor(statusPixel.Color(0, Config::STATUS_RESCUE_GREEN, 0));
 }
 
 }  // namespace
 
 void beginStatusLed() {
-  if (Config::STATUS_LED_KIND == Config::StatusLedKind::Digital) {
-    pinMode(Config::STATUS_LED_PIN, OUTPUT);
-  } else if (Config::STATUS_LED_KIND == Config::StatusLedKind::NeoPixel) {
-    statusPixel.begin();
-    statusPixel.setBrightness(Config::STATUS_LED_BRIGHTNESS);
+  statusPixel.begin();
+  statusPixel.setBrightness(Config::STATUS_LED_BRIGHTNESS);
+
+#if defined(PIN_NEOPIXEL)
+  if (PIN_NEOPIXEL != Config::STATUS_LED_PIN) {
+    builtInStatusPixel.begin();
+    builtInStatusPixel.setBrightness(Config::STATUS_LED_BRIGHTNESS);
   }
+#endif
 
   setStatusLed(false);
 }
 
 void setStatusLed(bool on) {
-  if (Config::STATUS_LED_KIND == Config::StatusLedKind::Digital) {
-    digitalWrite(Config::STATUS_LED_PIN, on ? HIGH : LOW);
-  } else if (Config::STATUS_LED_KIND == Config::StatusLedKind::NeoPixel) {
-    statusPixel.setPixelColor(0, on ? colorWheel(colorWheelPosition) : 0);
-    statusPixel.show();
-  }
+  showPixelColor(on ? colorWheel(colorWheelPosition) : 0);
 
   if (!on) {
     displayedLayer = 0xFF;
@@ -137,19 +139,11 @@ void updateStatusHeartbeat(bool mounted, bool remapperConnected, bool rescueActi
   displayedLayer = 0xFF;
   const uint32_t now = millis();
 
-  if (Config::STATUS_LED_KIND == Config::StatusLedKind::NeoPixel) {
-    if (lastUpdateMs != 0 && now - lastUpdateMs < Config::STATUS_COLOR_WHEEL_MS) {
-      return;
-    }
-
-    lastUpdateMs = now;
-    colorWheelPosition += 2;
-    statusPixel.setPixelColor(0, colorWheel(colorWheelPosition));
-    statusPixel.show();
+  if (lastUpdateMs != 0 && now - lastUpdateMs < Config::STATUS_COLOR_WHEEL_MS) {
     return;
   }
 
-  if (Config::STATUS_LED_KIND == Config::StatusLedKind::Digital) {
-    setStatusLed(true);
-  }
+  lastUpdateMs = now;
+  colorWheelPosition += 2;
+  showPixelColor(colorWheel(colorWheelPosition));
 }

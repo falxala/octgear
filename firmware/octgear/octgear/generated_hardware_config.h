@@ -20,6 +20,7 @@ constexpr uint8_t DEFAULT_LAYER_COLORS[LAYER_COUNT][3] = {
   { 0, 255, 220 },
   { 255, 70, 140 },
 };
+constexpr uint8_t EXTERNAL_RGB_LED_PIN = 14;
 constexpr uint8_t MATRIX_ROW_COUNT = 2;
 constexpr uint8_t MATRIX_COLUMN_COUNT = 4;
 
@@ -49,6 +50,6 @@ constexpr uint8_t ENCODER_CCW_KEY_INDEX = 8;
 constexpr uint8_t ENCODER_CW_KEY_INDEX = 9;
 constexpr uint8_t ENCODER_SWITCH_KEY_INDEX = 10;
 constexpr int8_t ENCODER_STEPS_PER_DETENT = 4;
-constexpr bool ENCODER_REVERSED = true;
+constexpr bool ENCODER_REVERSED = false;
 
 }  // namespace Config
