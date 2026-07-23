@@ -159,8 +159,7 @@
 }
 
 .hardware-brightness-control {
-  display: grid;
-  grid-template-columns: minmax(48px, 72px) 50px max-content;
+  display: flex;
   align-items: center;
   justify-content: end;
   gap: 6px;
@@ -168,7 +167,7 @@
 }
 
 .hardware-brightness-control input[type="range"] {
-  width: 100%;
+  width: 32%;
   margin: 0;
   accent-color: var(--selection);
 }
