@@ -35,24 +35,35 @@ void showPixelColor(uint32_t color) {
 #endif
 }
 
+uint32_t balancedPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
+  const uint16_t total = static_cast<uint16_t>(red) + green + blue;
+  if (total > 255) {
+    red = static_cast<uint8_t>((static_cast<uint32_t>(red) * 255U + total / 2U) / total);
+    green = static_cast<uint8_t>((static_cast<uint32_t>(green) * 255U + total / 2U) / total);
+    blue = static_cast<uint8_t>((static_cast<uint32_t>(blue) * 255U + total / 2U) / total);
+  }
+
+  return statusPixel.Color(red, green, blue);
+}
+
 uint32_t colorWheel(uint8_t position) {
   position = 255 - position;
 
   if (position < 85) {
-    return statusPixel.Color(255 - position * 3, 0, position * 3);
+    return balancedPixelColor(255 - position * 3, 0, position * 3);
   }
 
   if (position < 170) {
     position -= 85;
-    return statusPixel.Color(0, position * 3, 255 - position * 3);
+    return balancedPixelColor(0, position * 3, 255 - position * 3);
   }
 
   position -= 170;
-  return statusPixel.Color(position * 3, 255 - position * 3, 0);
+  return balancedPixelColor(position * 3, 255 - position * 3, 0);
 }
 
 void setLayerColorLed(const LayerColor& color) {
-  showPixelColor(statusPixel.Color(color.red, color.green, color.blue));
+  showPixelColor(balancedPixelColor(color.red, color.green, color.blue));
 }
 
 void setKeyboardLayerLed(uint8_t layer) {
@@ -61,7 +72,7 @@ void setKeyboardLayerLed(uint8_t layer) {
 }
 
 void setRescueLed() {
-  showPixelColor(statusPixel.Color(0, Config::STATUS_RESCUE_GREEN, 0));
+  showPixelColor(balancedPixelColor(0, Config::STATUS_RESCUE_GREEN, 0));
 }
 
 }  // namespace
