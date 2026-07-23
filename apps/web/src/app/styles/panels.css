@@ -160,9 +160,11 @@
 
 .hardware-brightness-control {
   display: grid;
-  grid-template-columns: minmax(80px, 1fr) 54px auto;
+  grid-template-columns: minmax(48px, 72px) 50px max-content;
   align-items: center;
+  justify-content: end;
   gap: 6px;
+  min-width: 0;
 }
 
 .hardware-brightness-control input[type="range"] {
@@ -172,7 +174,7 @@
 }
 
 .hardware-brightness-control input[type="number"] {
-  width: 54px;
+  width: 50px;
   min-height: 30px;
   padding: 3px 5px;
   text-align: right;
